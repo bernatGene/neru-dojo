@@ -1,1 +1,74 @@
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+	--color-background-100: var(--background-100);
+	--color-background-200: var(--background-200);
+	--color-background-300: var(--background-300);
+	--color-background-400: var(--background-400);
+	--color-background-500: var(--background-500);
+	--color-background-600: var(--background-600);
+
+	--color-foreground-100: var(--foreground-100);
+	--color-foreground-200: var(--foreground-200);
+	--color-foreground-300: var(--foreground-300);
+	--color-foreground-400: var(--foreground-400);
+	--color-foreground-500: var(--foreground-500);
+	--color-foreground-600: var(--foreground-600);
+
+	--color-highlight-100: var(--highlight-100);
+	--color-highlight-200: var(--highlight-200);
+	--color-highlight-300: var(--highlight-300);
+	--color-highlight-400: var(--highlight-400);
+	--color-highlight-500: var(--highlight-500);
+	--color-highlight-600: var(--highlight-600);
+}
+
+:root {
+	color-scheme: light;
+	--background-100: #ffffff;
+	--background-200: #f6f7fb;
+	--background-300: #eceff8;
+	--background-400: #d7ddf2;
+	--background-500: #b9c4e8;
+	--background-600: #95a5dc;
+
+	--foreground-100: #eef1fa;
+	--foreground-200: #c4cad8;
+	--foreground-300: #8c95aa;
+	--foreground-400: #586175;
+	--foreground-500: #252b3a;
+	--foreground-600: #05070d;
+
+	--highlight-100: #eef2ff;
+	--highlight-200: #d8e0ff;
+	--highlight-300: #aebcff;
+	--highlight-400: #748cff;
+	--highlight-500: #2f4bd4;
+	--highlight-600: #1c2f8f;
+}
+
+.dark {
+	color-scheme: dark;
+	--background-100: #070b18;
+	--background-200: #0d1430;
+	--background-300: #151f49;
+	--background-400: #223071;
+	--background-500: #3346a6;
+	--background-600: #4a63dc;
+
+	--foreground-100: #0e1426;
+	--foreground-200: #253052;
+	--foreground-300: #5d6c9f;
+	--foreground-400: #a7b2dc;
+	--foreground-500: #d9e0f5;
+	--foreground-600: #f8faff;
+
+	--highlight-100: #111a3d;
+	--highlight-200: #1b2a66;
+	--highlight-300: #2d45a3;
+	--highlight-400: #4967f0;
+	--highlight-500: #8ea2ff;
+	--highlight-600: #dbe2ff;
+}

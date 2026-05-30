@@ -11,7 +11,6 @@
 
 <svelte:head>
 	<title>Neru Dojo</title>
-	<meta name="description" content="Mouseless reaction-time training with Neru." />
 </svelte:head>
 
 <main class="flex min-h-screen items-center justify-center bg-background-100 font-mono text-2xl text-foreground-600">

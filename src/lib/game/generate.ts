@@ -1,6 +1,15 @@
 import { defaultPreset } from './config';
 import { Random } from './random';
-import type { ControlType, GameControl, GameModel, GamePanel, GameTask, GameToken } from './types';
+import type {
+	ControlType,
+	GameControl,
+	GameModel,
+	GamePanel,
+	GameTask,
+	GameToken,
+	InlineControlType,
+	InlineGameControl
+} from './types';
 
 export function generateGame(seed: string, words: readonly string[], preset = 'default'): GameModel {
 	const random = new Random(seed);
@@ -22,8 +31,8 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 			}
 
 			if (index === nextControlAt) {
-				const type: ControlType = random.chance(defaultPreset.writeChance) ? 'write' : 'click';
-				const control: GameControl = {
+				const type: InlineControlType = random.chance(defaultPreset.writeChance) ? 'write' : 'click';
+				const control: InlineGameControl = {
 					id: `control-${controlNumber}`,
 					panelId: panelConfig.id,
 					type,
@@ -47,17 +56,35 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 		panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
 	}
 
-	const tasks: GameTask[] = [];
+	const taskCounts = getTaskCounts(defaultPreset.taskCount);
 
-	for (let index = 0; index < defaultPreset.taskCount; index += 1) {
-		let control = pickTaskControl(random, controls);
+	for (let index = 0; index < taskCounts.overlay; index += 1) {
+		const control: GameControl = {
+			id: `control-${controlNumber}`,
+			type: 'overlay',
+			text: '',
+			x: random.int(10, 90),
+			y: random.int(10, 90)
+		};
 
-		while (index > 0 && controls.length > 1 && control.id === tasks[index - 1].controlId) {
-			control = pickTaskControl(random, controls);
-		}
-
-		tasks.push({ controlId: control.id });
+		controls.push(control);
+		controlById[control.id] = control;
+		controlNumber += 1;
 	}
+
+	const clickControls = controls.filter(
+		(control): control is InlineGameControl => control.type === 'click'
+	);
+	const writeControls = controls.filter(
+		(control): control is InlineGameControl => control.type === 'write'
+	);
+	const overlayControls = controls.filter((control) => control.type === 'overlay');
+	const taskControls = shuffle(random, [
+		...pickTaskControls(random, overlayControls, taskCounts.overlay, false),
+		...pickTaskControls(random, clickControls, taskCounts.click, true),
+		...pickTaskControls(random, writeControls, taskCounts.write, true)
+	]);
+	const tasks: GameTask[] = taskControls.map((control) => ({ controlId: control.id }));
 
 	return { seed, preset, panels, controls, controlById, tasks };
 }
@@ -72,7 +99,41 @@ function createWriteText(random: Random, words: readonly string[]) {
 	).join(' ');
 }
 
-function pickTaskControl(random: Random, controls: readonly GameControl[]) {
+function getTaskCounts(taskCount: number) {
+	const overlay = Math.round(taskCount * 0.5);
+	const write = Math.round(taskCount * 0.25);
+	return { overlay, write, click: taskCount - overlay - write };
+}
+
+function pickTaskControls<T extends GameControl>(
+	random: Random,
+	controls: readonly T[],
+	count: number,
+	preferContent: boolean
+) {
+	const picked: T[] = [];
+	let pool = [...controls];
+
+	if (count > 0 && controls.length === 0) {
+		throw new Error('No controls available for task type');
+	}
+
+	for (let index = 0; index < count; index += 1) {
+		if (pool.length === 0) {
+			pool = [...controls];
+		}
+
+		const control = preferContent
+			? pickInlineTaskControl(random, pool as InlineGameControl[])
+			: random.pick(pool);
+		picked.push(control as T);
+		pool = pool.filter((item) => item.id !== control.id);
+	}
+
+	return picked;
+}
+
+function pickInlineTaskControl(random: Random, controls: readonly InlineGameControl[]) {
 	const contentControls = controls.filter((control) => control.panelId === 'content');
 
 	if (contentControls.length > 0 && random.chance(defaultPreset.mainPanelTargetChance)) {
@@ -80,4 +141,15 @@ function pickTaskControl(random: Random, controls: readonly GameControl[]) {
 	}
 
 	return random.pick(controls);
+}
+
+function shuffle<T>(random: Random, items: readonly T[]) {
+	const shuffled = [...items];
+
+	for (let index = shuffled.length - 1; index > 0; index -= 1) {
+		const nextIndex = random.int(0, index);
+		[shuffled[index], shuffled[nextIndex]] = [shuffled[nextIndex], shuffled[index]];
+	}
+
+	return shuffled;
 }

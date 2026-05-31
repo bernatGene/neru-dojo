@@ -1,7 +1,7 @@
 <script lang="ts">
 	import InlineButton from './InlineButton.svelte';
 	import InlineForm from './InlineForm.svelte';
-	import type { GameControl } from '$lib/game/types';
+	import type { InlineGameControl } from '$lib/game/types';
 
 	let {
 		control,
@@ -9,7 +9,7 @@
 		onClickControl,
 		onFormSubmit
 	}: {
-		control: GameControl;
+		control: InlineGameControl;
 		active: boolean;
 		onClickControl: (id: string) => void;
 		onFormSubmit: (id: string, value: string) => void;

@@ -1,17 +1,28 @@
 export type PanelId = 'nav' | 'content' | 'meta';
-export type ControlType = 'click' | 'write';
+export type InlineControlType = 'click' | 'write';
+export type ControlType = InlineControlType | 'overlay';
 
 export type GameToken =
 	| { kind: 'word'; text: string }
 	| { kind: 'control'; controlId: string }
 	| { kind: 'break' };
 
-export type GameControl = {
+export type InlineGameControl = {
 	id: string;
 	panelId: PanelId;
-	type: ControlType;
+	type: InlineControlType;
 	text: string;
 };
+
+export type OverlayGameControl = {
+	id: string;
+	type: 'overlay';
+	text: '';
+	x: number;
+	y: number;
+};
+
+export type GameControl = InlineGameControl | OverlayGameControl;
 
 export type GamePanel = {
 	id: PanelId;

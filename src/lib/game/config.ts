@@ -1,7 +1,7 @@
 import type { GameConfig } from './types';
 
 export const defaultPreset: GameConfig = {
-	taskCount: 20,
+	taskCount: 15,
 	paragraphSize: 54,
 	writeChance: 0.25,
 	writeWordCount: 5,

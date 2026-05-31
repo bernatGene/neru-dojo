@@ -1,6 +1,6 @@
 <script lang="ts">
 	import InlineControl from './InlineControl.svelte';
-	import type { GameControl, GamePanel } from '$lib/game/types';
+	import type { GameControl, GamePanel, InlineGameControl } from '$lib/game/types';
 
 	let {
 		panel,
@@ -21,6 +21,16 @@
 	} = $props();
 
 	let bottomHint = $derived(Boolean(hint?.includes('down') || hint?.includes('bottom')));
+
+	function getInlineControl(controlId: string): InlineGameControl {
+		const control = controlById[controlId];
+
+		if (control.type === 'overlay') {
+			throw new Error('Overlay controls are not panel controls');
+		}
+
+		return control;
+	}
 </script>
 
 <section class="flex min-h-0 min-w-0 flex-col overflow-hidden border-2 border-foreground-600 bg-background-100">
@@ -49,7 +59,7 @@
 					<span class="block h-8"></span>
 				{:else}
 					<InlineControl
-						control={controlById[token.controlId]}
+						control={getInlineControl(token.controlId)}
 						active={token.controlId === activeControlId}
 						{onClickControl}
 						{onFormSubmit}

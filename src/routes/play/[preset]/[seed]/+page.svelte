@@ -2,9 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { onMount, tick } from 'svelte';
+	import OverlayButton from '$lib/components/OverlayButton.svelte';
 	import Panel from '$lib/components/Panel.svelte';
+	import PlayHeader from '$lib/components/PlayHeader.svelte';
 	import Results from '$lib/components/Results.svelte';
-	import RunHeader from '$lib/components/RunHeader.svelte';
 	import { generateGame, getControlType } from '$lib/game/generate';
 	import { getScrollHint } from '$lib/game/scrollHints';
 	import { createSeed } from '$lib/game/seed';
@@ -32,6 +33,7 @@
 	let completed = $derived(finishedAt !== null);
 	let activeTask = $derived(completed ? null : game.tasks[currentTaskIndex]);
 	let activeControlId = $derived(activeTask?.controlId ?? null);
+	let activeControl = $derived(activeControlId ? game.controlById[activeControlId] : null);
 	let elapsedMs = $derived(started ? (finishedAt ?? now) - startTime : 0);
 
 	onMount(() => {
@@ -111,7 +113,10 @@
 			return;
 		}
 
-		if (controlId === activeControlId && getControlType(game, controlId) === 'click') {
+		if (
+			controlId === activeControlId &&
+			['click', 'overlay'].includes(getControlType(game, controlId))
+		) {
 			advanceTask();
 			return;
 		}
@@ -194,6 +199,12 @@
 		}
 
 		const control = game.controlById[activeControlId];
+
+		if (control.type === 'overlay') {
+			hints = emptyHints();
+			return;
+		}
+
 		const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
 		const target = panel?.querySelector<HTMLElement>(`[data-control-id="${activeControlId}"]`);
 
@@ -217,27 +228,17 @@
 
 <main class="h-screen overflow-hidden bg-background-100 font-mono text-foreground-600">
 	<section class="flex h-full flex-col gap-5 p-6">
-		<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-			<div></div>
+		<PlayHeader
+			currentTask={currentTaskIndex + 1}
+			totalTasks={game.tasks.length}
+			{misses}
+			{elapsedMs}
+			{theme}
+			{nextTheme}
+			onToggleTheme={toggleTheme}
+		/>
 
-			<RunHeader
-				currentTask={currentTaskIndex + 1}
-				totalTasks={game.tasks.length}
-				{misses}
-				{elapsedMs}
-			/>
-
-			<button
-				type="button"
-				class="justify-self-end border-2 border-foreground-600 bg-background-100 px-5 py-3 text-xl text-foreground-600 outline-none hover:bg-foreground-600 hover:text-background-100 focus-visible:border-highlight-600"
-				onclick={toggleTheme}
-				aria-label={`Switch to ${nextTheme} theme`}
-			>
-				{theme}
-			</button>
-		</div>
-
-		<div class="min-h-0 flex-1">
+		<div class="relative min-h-0 flex-1">
 			{#key `${data.seed}-${runId}`}
 				<div
 					class="grid h-full gap-5"
@@ -256,6 +257,16 @@
 					{/each}
 				</div>
 			{/key}
+
+			{#if started && !completed && activeControl?.type === 'overlay'}
+				<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
+				<OverlayButton
+					id={activeControl.id}
+					x={activeControl.x}
+					y={activeControl.y}
+					onInteract={handleClickControl}
+				/>
+			{/if}
 		</div>
 	</section>
 

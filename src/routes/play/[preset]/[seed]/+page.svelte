@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { base } from '$app/paths';
+	import { asset, resolve } from '$app/paths';
 	import { onMount, tick } from 'svelte';
 	import OverlayButton from '$lib/components/OverlayButton.svelte';
 	import Panel from '$lib/components/Panel.svelte';
@@ -18,7 +18,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let theme = $state<Theme>('light');
-	let nextTheme = $derived(theme === 'light' ? 'dark' : 'light');
+	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 	let loadedSeed = $state<string | null>(null);
 	let runId = $state(0);
 	let started = $state(false);
@@ -174,7 +174,7 @@
 	}
 
 	function newSeed() {
-		goto(`${base}/play/default/${createSeed()}`, { noScroll: true });
+		goto(resolve('/play/[preset]/[seed]', { preset: 'default', seed: createSeed() }), { noScroll: true });
 	}
 
 	function normalizeText(value: string) {
@@ -277,7 +277,7 @@
 			onclick={start}
 			aria-label="Start"
 		>
-			<img src={`${base}/neru-appicon.png`} alt="Neru" class="h-28 w-28" />
+			<img src={asset('/neru-appicon.png')} alt="Neru" class="h-28 w-28" />
 			<span class="mt-8 text-4xl">neru-dojo</span>
 			<span class="mt-4 text-2xl">press anywhere to start</span>
 		</button>

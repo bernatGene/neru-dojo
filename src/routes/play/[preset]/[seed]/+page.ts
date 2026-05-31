@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { base } from '$app/paths';
+import { asset } from '$app/paths';
 import { isValidSeed } from '$lib/game/seed';
 import { loadWords } from '$lib/game/words';
 import type { PageLoad } from './$types';
@@ -18,6 +18,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	return {
 		preset: params.preset,
 		seed: params.seed,
-		words: await loadWords(fetch, base)
+		words: await loadWords(fetch, asset('/english.json'))
 	};
 };

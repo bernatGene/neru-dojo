@@ -2,8 +2,8 @@ type MonkeytypeWords = {
 	words?: string[];
 };
 
-export async function loadWords(fetcher: typeof fetch, basePath = '') {
-	const response = await fetcher(`${basePath}/english.json`);
+export async function loadWords(fetcher: typeof fetch, wordsPath = '/english.json') {
+	const response = await fetcher(wordsPath);
 
 	if (!response.ok) {
 		throw new Error('Failed to load English word list');

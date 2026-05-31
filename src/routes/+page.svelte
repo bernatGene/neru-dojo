@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { createSeed } from '$lib/game/seed';
 
 	onMount(() => {
-		goto(`${base}/play/default/${createSeed()}`, { replaceState: true, noScroll: true });
+		goto(resolve('/play/[preset]/[seed]', { preset: 'default', seed: createSeed() }), {
+			replaceState: true,
+			noScroll: true
+		});
 	});
 </script>
 

@@ -1,16 +1,14 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { asset, resolve } from "$app/paths";
-  import { onMount, tick } from "svelte";
-  import OverlayButton from "$lib/components/OverlayButton.svelte";
-  import Panel from "$lib/components/Panel.svelte";
+  import { onMount } from "svelte";
+  import GameBoard from "$lib/components/GameBoard.svelte";
   import PlayHeader from "$lib/components/PlayHeader.svelte";
   import Results from "$lib/components/Results.svelte";
-  import { generateGame, getControlType } from "$lib/game/generate";
-  import { getScrollHint } from "$lib/game/scrollHints";
+  import { generateGame } from "$lib/game/generate";
   import { createSeed } from "$lib/game/seed";
   import { saveSeedStats, type SeedStats } from "$lib/game/seedResults";
-  import type { PanelId } from "$lib/game/types";
+  import { isClickTask, isWriteTask } from "$lib/game/tasks";
   import type { PageData } from "./$types";
 
   type Theme = "light" | "dark";
@@ -29,15 +27,9 @@
   let now = $state(0);
   let finishedAt = $state<number | null>(null);
   let seedStats = $state<SeedStats | null>(null);
-  let hints = $state(emptyHints());
-  let hintFrame: number | null = null;
   let game = $derived(generateGame(data.seed, data.words, data.preset));
   let completed = $derived(finishedAt !== null);
-  let activeTask = $derived(completed ? null : game.tasks[currentTaskIndex]);
-  let activeControlId = $derived(activeTask?.controlId ?? null);
-  let activeControl = $derived(
-    activeControlId ? game.controlById[activeControlId] : null,
-  );
+  let activeControlId = $derived(completed ? null : game.tasks[currentTaskIndex]?.controlId);
   let elapsedMs = $derived(started ? (finishedAt ?? now) - startTime : 0);
 
   onMount(() => {
@@ -51,15 +43,8 @@
       }
     }, 50);
 
-    const handleResize = () => scheduleHintUpdate();
-    window.addEventListener("resize", handleResize);
-
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener("resize", handleResize);
-      if (hintFrame !== null) {
-        cancelAnimationFrame(hintFrame);
-      }
     };
   });
 
@@ -71,18 +56,6 @@
       resetRun();
     }
   });
-
-  $effect(() => {
-    currentTaskIndex;
-    started;
-    finishedAt;
-    runId;
-    void tick().then(scheduleHintUpdate);
-  });
-
-  function emptyHints(): Record<PanelId, string | null> {
-    return { nav: null, content: null, meta: null };
-  }
 
   function applyTheme(next: Theme) {
     document.documentElement.classList.toggle("dark", next === "dark");
@@ -105,7 +78,6 @@
     started = true;
     startTime = timestamp;
     now = timestamp;
-    scheduleHintUpdate();
   }
 
   function handleStartKeydown(event: KeyboardEvent) {
@@ -125,16 +97,12 @@
       return;
     }
 
-    if (
-      controlId === activeControlId &&
-      ["click", "overlay"].includes(getControlType(game, controlId))
-    ) {
+    if (isClickTask(game, activeControlId, controlId)) {
       advanceTask();
       return;
     }
 
     misses += 1;
-    scheduleHintUpdate();
   }
 
   function handleFormSubmit(controlId: string, value: string) {
@@ -142,17 +110,12 @@
       return;
     }
 
-    if (
-      controlId === activeControlId &&
-      getControlType(game, controlId) === "write" &&
-      normalizeText(value) === game.controlById[controlId].text
-    ) {
+    if (isWriteTask(game, activeControlId, controlId, value)) {
       advanceTask();
       return;
     }
 
     misses += 1;
-    scheduleHintUpdate();
   }
 
   function advanceTask() {
@@ -163,12 +126,10 @@
       now = timestamp;
       finishedAt = timestamp;
       seedStats = saveSeedStats(data.preset, data.seed, timestamp - startTime);
-      hints = emptyHints();
       return;
     }
 
     currentTaskIndex = nextTaskIndex;
-    void tick().then(scheduleHintUpdate);
   }
 
   function resetRun() {
@@ -179,12 +140,7 @@
     now = 0;
     finishedAt = null;
     seedStats = null;
-    hints = emptyHints();
     runId += 1;
-  }
-
-  function retry() {
-    resetRun();
   }
 
   function newSeed() {
@@ -195,51 +151,6 @@
       }),
       { noScroll: true },
     );
-  }
-
-  function normalizeText(value: string) {
-    return value.trim().toLowerCase().replace(/\s+/g, " ");
-  }
-
-  function scheduleHintUpdate() {
-    if (hintFrame !== null) {
-      return;
-    }
-
-    hintFrame = requestAnimationFrame(() => {
-      hintFrame = null;
-      updateHints();
-    });
-  }
-
-  function updateHints() {
-    if (!started || completed || !activeControlId) {
-      hints = emptyHints();
-      return;
-    }
-
-    const control = game.controlById[activeControlId];
-
-    if (control.type === "overlay") {
-      hints = emptyHints();
-      return;
-    }
-
-    const panel = document.querySelector<HTMLElement>(
-      `[data-panel-id="${control.panelId}"]`,
-    );
-    const target = panel?.querySelector<HTMLElement>(
-      `[data-control-id="${activeControlId}"]`,
-    );
-
-    if (!panel || !target) {
-      hints = emptyHints();
-      return;
-    }
-
-    const nextHints = emptyHints();
-    nextHints[control.panelId] = getScrollHint(panel, target);
-    hints = nextHints;
   }
 </script>
 
@@ -264,42 +175,19 @@
       {elapsedMs}
       {theme}
       {nextTheme}
-      onRestart={retry}
+      onRestart={resetRun}
       onToggleTheme={toggleTheme}
     />
 
-    <div class="relative min-h-0 flex-1">
-      {#key `${data.seed}-${runId}`}
-        <div
-          class="grid h-full gap-5"
-          style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);"
-        >
-          {#each game.panels as panel}
-            <Panel
-              {panel}
-              controlById={game.controlById}
-              {activeControlId}
-              hint={hints[panel.id]}
-              onClickControl={handleClickControl}
-              onFormSubmit={handleFormSubmit}
-              onScroll={scheduleHintUpdate}
-            />
-          {/each}
-        </div>
-      {/key}
-
-      {#if started && !completed && activeControl?.type === "overlay"}
-        <div
-          class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"
-        ></div>
-        <OverlayButton
-          id={activeControl.id}
-          x={activeControl.x}
-          y={activeControl.y}
-          onInteract={handleClickControl}
-        />
-      {/if}
-    </div>
+    <GameBoard
+      {game}
+      {started}
+      {completed}
+      runKey={`${data.seed}-${runId}`}
+      {activeControlId}
+      onClickControl={handleClickControl}
+      onFormSubmit={handleFormSubmit}
+    />
   </section>
 
   {#if !started && !completed}
@@ -316,6 +204,6 @@
   {/if}
 
   {#if completed}
-    <Results seed={data.seed} {elapsedMs} {misses} {seedStats} onRetry={retry} onNew={newSeed} />
+    <Results seed={data.seed} {elapsedMs} {misses} {seedStats} onRetry={resetRun} onNew={newSeed} />
   {/if}
 </main>

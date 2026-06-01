@@ -5,7 +5,7 @@
 	import { createSeed } from '$lib/game/seed';
 
 	onMount(() => {
-		goto(resolve('/play/[preset]/[seed]', { preset: 'default', seed: createSeed() }), {
+		goto(resolve('/play/[mode]/[seed]', { mode: 'default', seed: createSeed() }), {
 			replaceState: true,
 			noScroll: true
 		});

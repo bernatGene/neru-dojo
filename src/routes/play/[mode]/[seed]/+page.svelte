@@ -18,7 +18,7 @@
   let { data }: { data: PageData } = $props();
   let theme = $state<Theme>("light");
   let nextTheme = $derived<Theme>(theme === "light" ? "dark" : "light");
-  let loadedSeed = $state<string | null>(null);
+  let loadedRun = $state<string | null>(null);
   let runId = $state(0);
   let started = $state(false);
   let currentTaskIndex = $state(0);
@@ -27,7 +27,7 @@
   let now = $state(0);
   let finishedAt = $state<number | null>(null);
   let seedStats = $state<SeedStats | null>(null);
-  let game = $derived(generateGame(data.seed, data.words, data.preset));
+  let game = $derived(generateGame(data.seed, data.words, data.mode));
   let completed = $derived(finishedAt !== null);
   let activeControlId = $derived(completed ? null : game.tasks[currentTaskIndex]?.controlId);
   let elapsedMs = $derived(started ? (finishedAt ?? now) - startTime : 0);
@@ -49,10 +49,12 @@
   });
 
   $effect(() => {
-    if (loadedSeed === null) {
-      loadedSeed = data.seed;
-    } else if (loadedSeed !== data.seed) {
-      loadedSeed = data.seed;
+    const run = `${data.mode}:${data.seed}`;
+
+    if (loadedRun === null) {
+      loadedRun = run;
+    } else if (loadedRun !== run) {
+      loadedRun = run;
       resetRun();
     }
   });
@@ -125,7 +127,7 @@
       const timestamp = performance.now();
       now = timestamp;
       finishedAt = timestamp;
-      seedStats = saveSeedStats(data.preset, data.seed, timestamp - startTime);
+      seedStats = saveSeedStats(data.mode, data.seed, timestamp - startTime);
       return;
     }
 
@@ -145,8 +147,8 @@
 
   function newSeed() {
     goto(
-      resolve("/play/[preset]/[seed]", {
-        preset: "default",
+      resolve("/play/[mode]/[seed]", {
+        mode: data.mode,
         seed: createSeed(),
       }),
       { noScroll: true },
@@ -175,6 +177,8 @@
       {elapsedMs}
       {theme}
       {nextTheme}
+      mode={data.mode}
+      seed={data.seed}
       onRestart={resetRun}
       onToggleTheme={toggleTheme}
     />
@@ -183,7 +187,7 @@
       {game}
       {started}
       {completed}
-      runKey={`${data.seed}-${runId}`}
+      runKey={`${data.mode}-${data.seed}-${runId}`}
       {activeControlId}
       onClickControl={handleClickControl}
       onFormSubmit={handleFormSubmit}

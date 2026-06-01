@@ -1,6 +1,6 @@
 import type { GameConfig } from './types';
 
-export const defaultPreset: GameConfig = {
+export const defaultConfig: GameConfig = {
 	taskCount: 15,
 	paragraphSize: 54,
 	writeChance: 0.25,
@@ -16,9 +16,3 @@ export const defaultPreset: GameConfig = {
 		{ id: 'meta', title: 'meta', wordCount: 920 },
 	],
 };
-
-export const presets = {
-	default: defaultPreset,
-} as const;
-
-export type PresetSlug = keyof typeof presets;

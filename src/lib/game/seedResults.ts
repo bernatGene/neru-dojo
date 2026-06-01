@@ -3,8 +3,8 @@ export type SeedStats = { attempts: number; bestMs: number };
 const storageKey = 'neru-dojo-seed-results:v1';
 type SeedStatsByKey = Record<string, SeedStats>;
 
-export function saveSeedStats(preset: string, seed: string, elapsedMs: number): SeedStats {
-	const key = `${preset}:${seed}`;
+export function saveSeedStats(mode: string, seed: string, elapsedMs: number): SeedStats {
+	const key = `${mode}:${seed}`;
 	const stats = readSeedStats();
 	const previous = stats[key];
 	const next = {

@@ -58,7 +58,7 @@
 	}
 
 	function updateHints() {
-		if (!started || completed || !activeControlId) {
+		if (game.mode === 'overlay' || !started || completed || !activeControlId) {
 			hints = emptyHints();
 			return;
 		}
@@ -82,25 +82,44 @@
 	}
 </script>
 
-<div class="relative min-h-0 flex-1">
-	{#key runKey}
-		<div class="grid h-full gap-5" style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);">
-			{#each game.panels as panel}
-				<Panel
-					{panel}
-					controlById={game.controlById}
-					{activeControlId}
-					hint={hints[panel.id]}
-					{onClickControl}
-					{onFormSubmit}
-					onScroll={scheduleHintUpdate}
-				/>
-			{/each}
-		</div>
-	{/key}
+{#if game.mode === 'overlay'}
+	<div class="relative min-h-0 flex-1">
+		{#key runKey}
+			<div class="relative h-full w-full border-2 border-foreground-600 bg-background-100">
+				{#if started && !completed && activeControl?.type === 'overlay'}
+					<OverlayButton
+						id={activeControl.id}
+						x={activeControl.x}
+						y={activeControl.y}
+						width={activeControl.width}
+						height={activeControl.height}
+						onInteract={onClickControl}
+					/>
+				{/if}
+			</div>
+		{/key}
+	</div>
+{:else}
+	<div class="relative min-h-0 flex-1">
+		{#key runKey}
+			<div class="grid h-full gap-5" style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);">
+				{#each game.panels as panel}
+					<Panel
+						{panel}
+						controlById={game.controlById}
+						{activeControlId}
+						hint={hints[panel.id]}
+						{onClickControl}
+						{onFormSubmit}
+						onScroll={scheduleHintUpdate}
+					/>
+				{/each}
+			</div>
+		{/key}
 
-	{#if started && !completed && activeControl?.type === 'overlay'}
-		<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
-		<OverlayButton id={activeControl.id} x={activeControl.x} y={activeControl.y} onInteract={onClickControl} />
-	{/if}
-</div>
+		{#if started && !completed && activeControl?.type === 'overlay'}
+			<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
+			<OverlayButton id={activeControl.id} x={activeControl.x} y={activeControl.y} onInteract={onClickControl} />
+		{/if}
+	</div>
+{/if}

@@ -1,7 +1,8 @@
-import { defaultPreset } from './config';
+import { defaultConfig } from './config';
 import { Random } from './random';
 import type {
 	GameControl,
+	GameMode,
 	GameModel,
 	GamePanel,
 	GameTask,
@@ -13,7 +14,7 @@ import type {
 export function generateGame(
 	seed: string,
 	words: readonly string[],
-	preset = 'default',
+	mode: GameMode = 'default',
 ): GameModel {
 	const random = new Random(seed);
 	const panels: GamePanel[] = [];
@@ -21,20 +22,47 @@ export function generateGame(
 	const controlById: Record<string, GameControl> = {};
 	let controlNumber = 0;
 
-	for (const panelConfig of defaultPreset.panels) {
+	if (mode === 'overlay') {
+		for (let index = 0; index < defaultConfig.taskCount; index += 1) {
+			const control: GameControl = {
+				id: `control-${controlNumber}`,
+				type: 'overlay',
+				text: '',
+				x: random.int(10, 90),
+				y: random.int(10, 90),
+				width: random.int(12, 64),
+				height: random.int(12, 64),
+			};
+
+			controls.push(control);
+			controlById[control.id] = control;
+			controlNumber += 1;
+		}
+
+		return {
+			seed,
+			mode,
+			panels,
+			controls,
+			controlById,
+			tasks: shuffle(random, controls).map((control) => ({ controlId: control.id })),
+		};
+	}
+
+	for (const panelConfig of defaultConfig.panels) {
 		const tokens: GameToken[] = [];
 		let nextControlAt = random.int(
-			defaultPreset.controlSpacing.min,
-			defaultPreset.controlSpacing.max,
+			defaultConfig.controlSpacing.min,
+			defaultConfig.controlSpacing.max,
 		);
 
 		for (let index = 0; index < panelConfig.wordCount; index += 1) {
-			if (index > 0 && index % defaultPreset.paragraphSize === 0) {
+			if (index > 0 && index % defaultConfig.paragraphSize === 0) {
 				tokens.push({ kind: 'break' });
 			}
 
 			if (index === nextControlAt) {
-				const type: InlineControlType = random.chance(defaultPreset.writeChance)
+				const type: InlineControlType = random.chance(defaultConfig.writeChance)
 					? 'write'
 					: 'click';
 				const control: InlineGameControl = {
@@ -49,8 +77,8 @@ export function generateGame(
 				tokens.push({ kind: 'control', controlId: control.id });
 				controlNumber += 1;
 				nextControlAt += random.int(
-					defaultPreset.controlSpacing.min,
-					defaultPreset.controlSpacing.max,
+					defaultConfig.controlSpacing.min,
+					defaultConfig.controlSpacing.max,
 				);
 				continue;
 			}
@@ -61,7 +89,7 @@ export function generateGame(
 		panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
 	}
 
-	const taskCounts = getTaskCounts(defaultPreset.taskCount);
+	const taskCounts = getTaskCounts(defaultConfig.taskCount);
 
 	for (let index = 0; index < taskCounts.overlay; index += 1) {
 		const control: GameControl = {
@@ -91,11 +119,11 @@ export function generateGame(
 	]);
 	const tasks: GameTask[] = taskControls.map((control) => ({ controlId: control.id }));
 
-	return { seed, preset, panels, controls, controlById, tasks };
+	return { seed, mode, panels, controls, controlById, tasks };
 }
 
 function createWriteText(random: Random, words: readonly string[]) {
-	return Array.from({ length: defaultPreset.writeWordCount }, () =>
+	return Array.from({ length: defaultConfig.writeWordCount }, () =>
 		random.pick(words).toLowerCase(),
 	).join(' ');
 }
@@ -137,7 +165,7 @@ function pickTaskControls<T extends GameControl>(
 function pickInlineTaskControl(random: Random, controls: readonly InlineGameControl[]) {
 	const contentControls = controls.filter((control) => control.panelId === 'content');
 
-	if (contentControls.length > 0 && random.chance(defaultPreset.mainPanelTargetChance)) {
+	if (contentControls.length > 0 && random.chance(defaultConfig.mainPanelTargetChance)) {
 		return random.pick(contentControls);
 	}
 

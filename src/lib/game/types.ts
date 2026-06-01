@@ -1,4 +1,5 @@
 export type PanelId = 'nav' | 'content' | 'meta';
+export type GameMode = 'default' | 'overlay';
 export type InlineControlType = 'click' | 'write';
 export type ControlType = InlineControlType | 'overlay';
 
@@ -20,6 +21,8 @@ export type OverlayGameControl = {
 	text: '';
 	x: number;
 	y: number;
+	width?: number;
+	height?: number;
 };
 
 export type GameControl = InlineGameControl | OverlayGameControl;
@@ -36,7 +39,7 @@ export type GameTask = {
 
 export type GameModel = {
 	seed: string;
-	preset: string;
+	mode: GameMode;
 	panels: GamePanel[];
 	controls: GameControl[];
 	controlById: Record<string, GameControl>;

@@ -1,0 +1,29 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"formatter": {
+		"enabled": true,
+		"includes": ["**", "!.svelte-kit/**", "!build/**", "!dist/**", "!node_modules/**"],
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"includes": ["**", "!.svelte-kit/**", "!build/**", "!dist/**", "!node_modules/**"],
+		"rules": {
+			"recommended": true
+		}
+	},
+	"html": {
+		"experimentalFullSupportEnabled": true
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single"
+		}
+	}
+}

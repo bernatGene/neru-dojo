@@ -18,6 +18,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	return {
 		preset: params.preset,
 		seed: params.seed,
-		words: await loadWords(fetch, asset('/english.json'))
+		words: await loadWords(fetch, asset('/english.json')),
 	};
 };

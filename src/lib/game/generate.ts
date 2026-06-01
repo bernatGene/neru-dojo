@@ -1,17 +1,20 @@
 import { defaultPreset } from './config';
 import { Random } from './random';
 import type {
-	ControlType,
 	GameControl,
 	GameModel,
 	GamePanel,
 	GameTask,
 	GameToken,
 	InlineControlType,
-	InlineGameControl
+	InlineGameControl,
 } from './types';
 
-export function generateGame(seed: string, words: readonly string[], preset = 'default'): GameModel {
+export function generateGame(
+	seed: string,
+	words: readonly string[],
+	preset = 'default',
+): GameModel {
 	const random = new Random(seed);
 	const panels: GamePanel[] = [];
 	const controls: GameControl[] = [];
@@ -22,7 +25,7 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 		const tokens: GameToken[] = [];
 		let nextControlAt = random.int(
 			defaultPreset.controlSpacing.min,
-			defaultPreset.controlSpacing.max
+			defaultPreset.controlSpacing.max,
 		);
 
 		for (let index = 0; index < panelConfig.wordCount; index += 1) {
@@ -31,12 +34,14 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 			}
 
 			if (index === nextControlAt) {
-				const type: InlineControlType = random.chance(defaultPreset.writeChance) ? 'write' : 'click';
+				const type: InlineControlType = random.chance(defaultPreset.writeChance)
+					? 'write'
+					: 'click';
 				const control: InlineGameControl = {
 					id: `control-${controlNumber}`,
 					panelId: panelConfig.id,
 					type,
-					text: type === 'write' ? createWriteText(random, words) : ''
+					text: type === 'write' ? createWriteText(random, words) : '',
 				};
 
 				controls.push(control);
@@ -45,7 +50,7 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 				controlNumber += 1;
 				nextControlAt += random.int(
 					defaultPreset.controlSpacing.min,
-					defaultPreset.controlSpacing.max
+					defaultPreset.controlSpacing.max,
 				);
 				continue;
 			}
@@ -64,7 +69,7 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 			type: 'overlay',
 			text: '',
 			x: random.int(10, 90),
-			y: random.int(10, 90)
+			y: random.int(10, 90),
 		};
 
 		controls.push(control);
@@ -73,29 +78,25 @@ export function generateGame(seed: string, words: readonly string[], preset = 'd
 	}
 
 	const clickControls = controls.filter(
-		(control): control is InlineGameControl => control.type === 'click'
+		(control): control is InlineGameControl => control.type === 'click',
 	);
 	const writeControls = controls.filter(
-		(control): control is InlineGameControl => control.type === 'write'
+		(control): control is InlineGameControl => control.type === 'write',
 	);
 	const overlayControls = controls.filter((control) => control.type === 'overlay');
 	const taskControls = shuffle(random, [
 		...pickTaskControls(random, overlayControls, taskCounts.overlay, false),
 		...pickTaskControls(random, clickControls, taskCounts.click, true),
-		...pickTaskControls(random, writeControls, taskCounts.write, true)
+		...pickTaskControls(random, writeControls, taskCounts.write, true),
 	]);
 	const tasks: GameTask[] = taskControls.map((control) => ({ controlId: control.id }));
 
 	return { seed, preset, panels, controls, controlById, tasks };
 }
 
-export function getControlType(game: GameModel, controlId: string): ControlType {
-	return game.controlById[controlId].type;
-}
-
 function createWriteText(random: Random, words: readonly string[]) {
 	return Array.from({ length: defaultPreset.writeWordCount }, () =>
-		random.pick(words).toLowerCase()
+		random.pick(words).toLowerCase(),
 	).join(' ');
 }
 
@@ -109,7 +110,7 @@ function pickTaskControls<T extends GameControl>(
 	random: Random,
 	controls: readonly T[],
 	count: number,
-	preferContent: boolean
+	preferContent: boolean,
 ) {
 	const picked: T[] = [];
 	let pool = [...controls];

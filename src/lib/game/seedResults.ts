@@ -1,6 +1,7 @@
 export type SeedStats = { attempts: number; bestMs: number };
 
 const storageKey = 'neru-dojo-seed-results:v1';
+type SeedStatsByKey = Record<string, SeedStats>;
 
 export function saveSeedStats(preset: string, seed: string, elapsedMs: number): SeedStats {
 	const key = `${preset}:${seed}`;
@@ -8,7 +9,7 @@ export function saveSeedStats(preset: string, seed: string, elapsedMs: number): 
 	const previous = stats[key];
 	const next = {
 		attempts: (previous?.attempts ?? 0) + 1,
-		bestMs: Math.min(previous?.bestMs ?? elapsedMs, elapsedMs)
+		bestMs: Math.min(previous?.bestMs ?? elapsedMs, elapsedMs),
 	};
 
 	stats[key] = next;
@@ -22,32 +23,15 @@ export function saveSeedStats(preset: string, seed: string, elapsedMs: number): 
 	return next;
 }
 
-function readSeedStats(): Record<string, SeedStats> {
+function readSeedStats(): SeedStatsByKey {
 	try {
 		const stored = localStorage.getItem(storageKey);
-		const parsed: unknown = stored ? JSON.parse(stored) : {};
+		if (!stored) return {};
 
-		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-			return {};
-		}
-
-		const stats: Record<string, SeedStats> = {};
-
-		for (const [key, value] of Object.entries(parsed)) {
-			const entry = value as Partial<SeedStats>;
-
-			if (
-				entry &&
-				typeof entry === 'object' &&
-				!Array.isArray(entry) &&
-				typeof entry.attempts === 'number' &&
-				typeof entry.bestMs === 'number'
-			) {
-				stats[key] = { attempts: entry.attempts, bestMs: entry.bestMs };
-			}
-		}
-
-		return stats;
+		const parsed: unknown = JSON.parse(stored);
+		return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+			? (parsed as SeedStatsByKey)
+			: {};
 	} catch {
 		return {};
 	}

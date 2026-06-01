@@ -8,17 +8,17 @@ export const defaultPreset: GameConfig = {
 	mainPanelTargetChance: 0.8,
 	controlSpacing: {
 		min: 18,
-		max: 34
+		max: 34,
 	},
 	panels: [
 		{ id: 'nav', title: 'nav', wordCount: 920 },
 		{ id: 'content', title: 'content', wordCount: 1600 },
-		{ id: 'meta', title: 'meta', wordCount: 920 }
-	]
+		{ id: 'meta', title: 'meta', wordCount: 920 },
+	],
 };
 
 export const presets = {
-	default: defaultPreset
+	default: defaultPreset,
 } as const;
 
 export type PresetSlug = keyof typeof presets;

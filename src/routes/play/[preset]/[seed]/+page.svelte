@@ -315,6 +315,6 @@
   {/if}
 
   {#if completed}
-    <Results {elapsedMs} {misses} {seedStats} onRetry={retry} onNew={newSeed} />
+    <Results seed={data.seed} {elapsedMs} {misses} {seedStats} onRetry={retry} onNew={newSeed} />
   {/if}
 </main>

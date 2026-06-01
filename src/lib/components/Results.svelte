@@ -1,12 +1,20 @@
 <script lang="ts">
 	import { formatElapsed } from '$lib/game/time';
+	import type { SeedStats } from '$lib/game/seedResults';
 
 	let {
 		elapsedMs,
 		misses,
+		seedStats,
 		onRetry,
 		onNew
-	}: { elapsedMs: number; misses: number; onRetry: () => void; onNew: () => void } = $props();
+	}: {
+		elapsedMs: number;
+		misses: number;
+		seedStats: SeedStats | null;
+		onRetry: () => void;
+		onNew: () => void;
+	} = $props();
 </script>
 
 <div
@@ -16,6 +24,10 @@
 		<h2 class="text-4xl font-medium">results</h2>
 		<p class="mt-8 text-2xl">time {formatElapsed(elapsedMs)}</p>
 		<p class="mt-3 text-2xl">misses {misses}</p>
+		{#if seedStats}
+			<p class="mt-3 text-2xl">attempts {seedStats.attempts}</p>
+			<p class="mt-3 text-2xl">best {formatElapsed(seedStats.bestMs)}</p>
+		{/if}
 
 		<div class="mt-10 flex gap-4">
 			<button

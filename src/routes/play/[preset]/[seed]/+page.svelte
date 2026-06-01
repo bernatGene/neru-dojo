@@ -264,6 +264,7 @@
       {elapsedMs}
       {theme}
       {nextTheme}
+      onRestart={retry}
       onToggleTheme={toggleTheme}
     />
 

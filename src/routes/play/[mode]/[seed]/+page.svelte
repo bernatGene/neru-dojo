@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { asset, resolve } from "$app/paths";
+  import { resolve } from "$app/paths";
   import { onMount } from "svelte";
   import GameBoard from "$lib/components/GameBoard.svelte";
   import PlayHeader from "$lib/components/PlayHeader.svelte";
@@ -78,18 +78,6 @@
     const timestamp = performance.now();
     startTime = timestamp;
     now = timestamp;
-  }
-
-  function handleStartKeydown(event: KeyboardEvent) {
-    if (
-      !started &&
-      !completed &&
-      !event.metaKey &&
-      !event.ctrlKey &&
-      !event.altKey
-    ) {
-      start();
-    }
   }
 
   function handleClickControl(controlId: string) {
@@ -179,8 +167,6 @@
   />
 </svelte:head>
 
-<svelte:window onkeydown={handleStartKeydown} />
-
 <main
   class="h-screen overflow-hidden bg-background-100 font-mono text-foreground-600"
 >
@@ -208,21 +194,9 @@
       onClickMiss={handleClickMiss}
       onFormSubmit={handleFormSubmit}
       onScrollComplete={handleScrollComplete}
+      onStart={start}
     />
   </section>
-
-  {#if !started && !completed}
-    <button
-      type="button"
-      class="fixed inset-0 z-30 flex cursor-default flex-col items-center justify-center bg-background-100/95 text-center text-foreground-600"
-      onclick={start}
-      aria-label="Start"
-    >
-      <img src={asset("/neru-appicon.png")} alt="Neru" class="h-28 w-28" />
-      <span class="mt-8 text-4xl">neru-dojo</span>
-      <span class="mt-4 text-2xl">press anywhere to start</span>
-    </button>
-  {/if}
 
   {#if completed}
     <Results

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { getHorizontalScrollHint, getScrollHint } from '$lib/game/scrollHints';
-	import HorizontalScrollPanel from './HorizontalScrollPanel.svelte';
 	import OverlayButton from './OverlayButton.svelte';
 	import Panel from './Panel.svelte';
-	import ScrollGuide from './ScrollGuide.svelte';
-	import type { GameModel, PanelId, ScrollGameControl } from '$lib/game/types';
+	import type { GameControl, GameModel, ScrollGameControl } from '$lib/game/types';
+
+type ActiveHint = { panelId: string; text: string } | null;
 
 type Guide = {
 	axis: 'vertical' | 'horizontal';
@@ -17,13 +17,17 @@ type Guide = {
 	end: number;
 };
 
+type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
+
 	let {
 		game,
 		started,
 		completed,
 		runKey,
+		activeControl,
 		activeControlId,
 		onClickControl,
+		onClickMiss,
 		onFormSubmit,
 		onScrollComplete
 	}: {
@@ -31,20 +35,19 @@ type Guide = {
 		started: boolean;
 		completed: boolean;
 		runKey: string;
+		activeControl: GameControl | null;
 		activeControlId: string | null;
 		onClickControl: (id: string) => void;
+		onClickMiss: () => void;
 		onFormSubmit: (id: string, value: string) => void;
 		onScrollComplete: (id: string) => void;
 	} = $props();
 
-	let hints = $state(emptyHints());
-	let horizontalHint = $state<string | null>(null);
+	let activeHint = $state<ActiveHint>(null);
 	let measureFrame: number | null = null;
 	let holdTimer: number | null = null;
-	let holdControlId: string | null = null;
 	let board = $state<HTMLElement | null>(null);
 	let guide = $state<Guide | null>(null);
-	let activeControl = $derived(activeControlId ? game.controlById[activeControlId] : null);
 
 	onMount(() => {
 		window.addEventListener('resize', scheduleHintUpdate);
@@ -65,10 +68,6 @@ type Guide = {
 		void tick().then(scheduleHintUpdate);
 	});
 
-	function emptyHints(): Record<PanelId, string | null> {
-		return { nav: null, content: null, meta: null };
-	}
-
 	function scheduleHintUpdate() {
 		if (measureFrame !== null) return;
 
@@ -80,39 +79,33 @@ type Guide = {
 	}
 
 	function updateHints() {
-		if (game.mode === 'click' || !started || completed || !activeControlId) {
-			hints = emptyHints();
-			horizontalHint = null;
+		if (game.mode === 'click' || !started || completed || !activeControlId || !activeControl) {
+			activeHint = null;
 			return;
 		}
 
-		const control = game.controlById[activeControlId];
+		const control = activeControl;
 
 		if (control.type === 'overlay') {
-			hints = emptyHints();
-			horizontalHint = null;
+			activeHint = null;
 			return;
 		}
+
+		const elements = getControlElements(control);
 
 		if (control.type === 'scroll' && control.axis === 'horizontal') {
-			const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
-			const target = panel?.querySelector<HTMLElement>(`[data-control-id="${activeControlId}"]`);
-
-			hints = emptyHints();
-			horizontalHint = panel && target ? getHorizontalScrollHint(panel, target) : null;
+			const text = elements ? getHorizontalScrollHint(elements.panel, elements.target) : null;
+			activeHint = text ? { panelId: control.panelId, text } : null;
 			return;
 		}
 
-		const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
-		const target = panel?.querySelector<HTMLElement>(`[data-control-id="${activeControlId}"]`);
-
-		if (!panel || !target) {
-			hints = emptyHints();
+		if (!elements) {
+			activeHint = null;
 			return;
 		}
 
-		hints = { ...emptyHints(), [control.panelId]: getScrollHint(panel, target) };
-		horizontalHint = null;
+		const text = getScrollHint(elements.panel, elements.target);
+		activeHint = text ? { panelId: control.panelId, text } : null;
 	}
 
 	function updateScrollGuide() {
@@ -124,17 +117,16 @@ type Guide = {
 			return;
 		}
 
-		const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
-		const target = panel?.querySelector<HTMLElement>(`[data-control-id="${control.id}"]`);
+		const elements = getControlElements(control);
 
-		if (!panel || !target) {
+		if (!elements) {
 			guide = null;
 			cancelHold();
 			return;
 		}
 
-		const panelRect = panel.getBoundingClientRect();
-		const targetRect = target.getBoundingClientRect();
+		const panelRect = elements.panel.getBoundingClientRect();
+		const targetRect = elements.target.getBoundingClientRect();
 		const boardRect = board.getBoundingClientRect();
 		const separation = control.axis === 'vertical' ? targetRect.height * 4 : targetRect.width * 1.5;
 		const size = control.axis === 'vertical' ? panelRect.height : panelRect.width;
@@ -162,8 +154,13 @@ type Guide = {
 	function getActiveScrollControl(): ScrollGameControl | null {
 		if (game.mode !== 'scroll' || !started || completed || !activeControlId) return null;
 
-		const control = game.controlById[activeControlId];
-		return control.type === 'scroll' ? control : null;
+		return activeControl?.type === 'scroll' ? activeControl : null;
+	}
+
+	function getControlElements(control: { id: string; panelId: string }): ControlElements {
+		const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
+		const target = panel?.querySelector<HTMLElement>(`[data-control-id="${control.id}"]`);
+		return panel && target ? { panel, target } : null;
 	}
 
 	function getGuideCenter(size: number, separation: number, position: number) {
@@ -190,14 +187,12 @@ type Guide = {
 	}
 
 	function startHold(controlId: string) {
-		if (holdControlId === controlId && holdTimer !== null) return;
+		if (holdTimer !== null) return;
 
-		cancelHold();
-		holdControlId = controlId;
 		holdTimer = window.setTimeout(() => {
 			holdTimer = null;
 
-			if (holdControlId === controlId && isActiveScrollInsideGuide(controlId)) {
+			if (isActiveScrollInsideGuide(controlId)) {
 				onScrollComplete(controlId);
 			}
 		}, 150);
@@ -208,14 +203,13 @@ type Guide = {
 
 		if (!control || control.id !== controlId || !guide) return false;
 
-		const panel = document.querySelector<HTMLElement>(`[data-panel-id="${control.panelId}"]`);
-		const target = panel?.querySelector<HTMLElement>(`[data-control-id="${control.id}"]`);
+		const elements = getControlElements(control);
 
-		return panel && target
+		return elements
 			? isTargetInsideGuide(
 					control.axis,
-					panel.getBoundingClientRect(),
-					target.getBoundingClientRect(),
+					elements.panel.getBoundingClientRect(),
+					elements.target.getBoundingClientRect(),
 					guide.start,
 					guide.end,
 				)
@@ -227,60 +221,55 @@ type Guide = {
 			window.clearTimeout(holdTimer);
 			holdTimer = null;
 		}
+	}
 
-		holdControlId = null;
+	function handleClickPanel() {
+		if (game.mode === 'click' && started && !completed) onClickMiss();
 	}
 </script>
 
-{#if game.mode === 'click'}
-	<div class="relative min-h-0 flex-1">
+<div class="relative min-h-0 flex-1" bind:this={board}>
 		{#key runKey}
-			<div class="relative h-full w-full border-2 border-foreground-600 bg-background-100">
-				{#if started && !completed && activeControl?.type === 'overlay'}
-					<OverlayButton
-						id={activeControl.id}
-						x={activeControl.x}
-						y={activeControl.y}
-						width={activeControl.width}
-						height={activeControl.height}
-						onInteract={onClickControl}
-					/>
-				{/if}
-			</div>
-		{/key}
-	</div>
-{:else}
-	<div class="relative min-h-0 flex-1" bind:this={board}>
-		{#key runKey}
-			<div class={game.mode === 'scroll' ? 'flex h-full flex-col gap-5' : 'h-full'}>
-				<div
-					class={`grid min-h-0 gap-5 ${game.mode === 'scroll' ? 'flex-1' : 'h-full'}`}
-					style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);"
-				>
-					{#each game.panels as panel}
-						<Panel
-							{panel}
-							controlById={game.controlById}
-							{activeControlId}
-							hint={hints[panel.id]}
-							endPadding={game.mode === 'scroll'}
-							{onClickControl}
-							{onFormSubmit}
-							onScroll={scheduleHintUpdate}
-						/>
-					{/each}
-				</div>
+			{#if game.mode === 'click'}
+				<button
+					type="button"
+					class="relative h-full w-full cursor-default border-2 border-foreground-600 bg-background-100"
+					onclick={handleClickPanel}
+					aria-label="Click panel"
+				></button>
+			{:else}
+				<div class={game.mode === 'scroll' ? 'flex h-full flex-col gap-5' : 'h-full'}>
+					<div
+						class={`grid min-h-0 gap-5 ${game.mode === 'scroll' ? 'flex-1' : 'h-full'}`}
+						style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);"
+					>
+						{#each game.panels as panel}
+							<Panel
+								{panel}
+								{activeControlId}
+								hint={activeHint?.panelId === panel.id ? activeHint.text : null}
+								endPadding={game.mode === 'scroll'}
+								{onClickControl}
+								{onFormSubmit}
+								onScroll={scheduleHintUpdate}
+							/>
+						{/each}
+					</div>
 
 				{#if game.mode === 'scroll'}
-					<HorizontalScrollPanel
+					<Panel
+						panelId="horizontal"
 						tokens={game.horizontalTokens}
-						controlById={game.controlById}
 						{activeControlId}
-						hint={horizontalHint}
+						hint={activeHint?.panelId === 'horizontal' ? activeHint.text : null}
+						horizontal
+						{onClickControl}
+						{onFormSubmit}
 						onScroll={scheduleHintUpdate}
 					/>
 				{/if}
-			</div>
+				</div>
+			{/if}
 		{/key}
 
 		{#if guide}
@@ -288,13 +277,28 @@ type Guide = {
 				class="pointer-events-none absolute z-20 overflow-hidden"
 				style={`left: ${guide.left}px; top: ${guide.top}px; width: ${guide.width}px; height: ${guide.height}px;`}
 			>
-				<ScrollGuide axis={guide.axis} start={guide.start} end={guide.end} />
+				{#each [guide.start, guide.end] as position}
+					<div
+						class={guide.axis === 'vertical'
+							? 'pointer-events-none absolute left-0 right-0 z-20 border-t-4 border-highlight-600'
+							: 'pointer-events-none absolute bottom-0 top-0 z-20 border-l-4 border-highlight-600'}
+						style={guide.axis === 'vertical' ? `top: ${position}px;` : `left: ${position}px;`}
+					></div>
+				{/each}
 			</div>
 		{/if}
 
 		{#if started && !completed && activeControl?.type === 'overlay'}
-			<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
-			<OverlayButton id={activeControl.id} x={activeControl.x} y={activeControl.y} onInteract={onClickControl} />
+			{#if game.mode !== 'click'}
+				<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
+			{/if}
+			<OverlayButton
+				id={activeControl.id}
+				x={activeControl.x}
+				y={activeControl.y}
+				width={activeControl.width}
+				height={activeControl.height}
+				onInteract={onClickControl}
+			/>
 		{/if}
-	</div>
-{/if}
+</div>

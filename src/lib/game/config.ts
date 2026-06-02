@@ -1,6 +1,4 @@
-import type { GameConfig } from './types';
-
-export const defaultConfig: GameConfig = {
+export const defaultConfig = {
 	taskCount: 15,
 	paragraphSize: 54,
 	writeChance: 0.25,
@@ -15,4 +13,4 @@ export const defaultConfig: GameConfig = {
 		{ id: 'content', title: 'content', wordCount: 1600 },
 		{ id: 'meta', title: 'meta', wordCount: 920 },
 	],
-};
+} as const;

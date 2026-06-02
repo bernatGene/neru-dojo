@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { asset, resolve } from '$app/paths';
-	import RunHeader from './RunHeader.svelte';
+	import { formatElapsed } from '$lib/game/time';
 	import type { GameMode } from '$lib/game/types';
 
 	type Theme = 'light' | 'dark';
@@ -13,7 +13,6 @@
 		mode,
 		seed,
 		theme,
-		nextTheme,
 		onRestart,
 		onToggleTheme
 	}: {
@@ -24,12 +23,12 @@
 		mode: GameMode;
 		seed: string;
 		theme: Theme;
-		nextTheme: Theme;
 		onRestart: () => void;
 		onToggleTheme: () => void;
 	} = $props();
 
 	const modes: readonly GameMode[] = ['default', 'click', 'scroll'];
+	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 
 	function modeHref(nextMode: GameMode) {
 		return resolve('/play/[mode]/[seed]', { mode: nextMode, seed });
@@ -51,7 +50,11 @@
 		{/each}
 	</nav>
 
-	<RunHeader {currentTask} {totalTasks} {misses} {elapsedMs} />
+	<header class="flex items-center justify-center gap-10 text-2xl text-foreground-600">
+		<span>task {Math.min(currentTask, totalTasks)}/{totalTasks}</span>
+		<span>misses {misses}</span>
+		<span>{formatElapsed(elapsedMs)}</span>
+	</header>
 
 	<div class="flex justify-self-end gap-3">
 		<button

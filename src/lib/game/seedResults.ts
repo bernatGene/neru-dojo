@@ -1,7 +1,8 @@
-export type SeedStats = { attempts: number; bestMs: number };
+type StoredSeedStats = { attempts: number; bestMs: number };
+export type SeedStats = StoredSeedStats & { modeBestMs: number };
 
 const storageKey = 'neru-dojo-seed-results:v1';
-type SeedStatsByKey = Record<string, SeedStats>;
+type SeedStatsByKey = Record<string, StoredSeedStats>;
 
 export function saveSeedStats(mode: string, seed: string, elapsedMs: number): SeedStats {
 	const key = `${mode}:${seed}`;
@@ -14,13 +15,23 @@ export function saveSeedStats(mode: string, seed: string, elapsedMs: number): Se
 
 	stats[key] = next;
 
+	const modeBestMs = Math.min(
+		...Object.entries(stats)
+			.filter(([key]) => key.startsWith(`${mode}:`))
+			.map(([, item]) => item.bestMs),
+	);
+
 	try {
 		localStorage.setItem(storageKey, JSON.stringify(stats));
 	} catch {
-		return next;
+		return { ...next, modeBestMs };
 	}
 
-	return next;
+	return { ...next, modeBestMs };
+}
+
+export function clearSeedStats() {
+	localStorage.removeItem(storageKey);
 }
 
 function readSeedStats(): SeedStatsByKey {

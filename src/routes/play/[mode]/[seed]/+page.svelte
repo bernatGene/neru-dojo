@@ -7,8 +7,7 @@
   import Results from "$lib/components/Results.svelte";
   import { generateGame } from "$lib/game/generate";
   import { createSeed } from "$lib/game/seed";
-  import { saveSeedStats, type SeedStats } from "$lib/game/seedResults";
-  import { isClickTask, isScrollTask, isWriteTask } from "$lib/game/tasks";
+  import { clearSeedStats, saveSeedStats, type SeedStats } from "$lib/game/seedResults";
   import type { PageData } from "./$types";
 
   type Theme = "light" | "dark";
@@ -17,10 +16,8 @@
 
   let { data }: { data: PageData } = $props();
   let theme = $state<Theme>("light");
-  let nextTheme = $derived<Theme>(theme === "light" ? "dark" : "light");
   let loadedRun = $state<string | null>(null);
   let runId = $state(0);
-  let started = $state(false);
   let currentTaskIndex = $state(0);
   let misses = $state(0);
   let startTime = $state(0);
@@ -28,8 +25,10 @@
   let finishedAt = $state<number | null>(null);
   let seedStats = $state<SeedStats | null>(null);
   let game = $derived(generateGame(data.seed, data.words, data.mode));
+  let started = $derived(startTime > 0);
   let completed = $derived(finishedAt !== null);
-  let activeControlId = $derived(completed ? null : game.tasks[currentTaskIndex]?.controlId);
+  let activeControl = $derived(completed ? null : game.tasks[currentTaskIndex]);
+  let activeControlId = $derived(activeControl?.id ?? null);
   let elapsedMs = $derived(started ? (finishedAt ?? now) - startTime : 0);
 
   onMount(() => {
@@ -77,7 +76,6 @@
     }
 
     const timestamp = performance.now();
-    started = true;
     startTime = timestamp;
     now = timestamp;
   }
@@ -95,39 +93,42 @@
   }
 
   function handleClickControl(controlId: string) {
-    if (!started || completed) {
-      return;
-    }
+    if (!started || completed) return;
+    if (!completeControl(controlId, "click")) misses += 1;
+  }
 
-    if (isClickTask(game, activeControlId, controlId)) {
-      advanceTask();
-      return;
-    }
-
-    misses += 1;
+  function handleClickMiss() {
+    if (started && !completed) misses += 1;
   }
 
   function handleFormSubmit(controlId: string, value: string) {
-    if (!started || completed) {
-      return;
-    }
-
-    if (isWriteTask(game, activeControlId, controlId, value)) {
-      advanceTask();
-      return;
-    }
-
-    misses += 1;
+    if (!started || completed) return;
+    if (!completeControl(controlId, "write", value)) misses += 1;
   }
 
   function handleScrollComplete(controlId: string) {
-    if (!started || completed) {
-      return;
+    completeControl(controlId, "scroll");
+  }
+
+  function completeControl(controlId: string, action: "click" | "write" | "scroll", value = "") {
+    if (!started || completed || activeControl?.id !== controlId) return false;
+
+    if (
+      (action === "click" && (activeControl.type === "click" || activeControl.type === "overlay")) ||
+      (action === "write" &&
+        activeControl.type === "write" &&
+        normalizeText(value) === activeControl.text) ||
+      (action === "scroll" && activeControl.type === "scroll")
+    ) {
+      advanceTask();
+      return true;
     }
 
-    if (isScrollTask(game, activeControlId, controlId)) {
-      advanceTask();
-    }
+    return false;
+  }
+
+  function normalizeText(value: string) {
+    return value.trim().toLowerCase().replace(/\s+/g, " ");
   }
 
   function advanceTask() {
@@ -145,7 +146,6 @@
   }
 
   function resetRun() {
-    started = false;
     currentTaskIndex = 0;
     misses = 0;
     startTime = 0;
@@ -163,6 +163,11 @@
       }),
       { noScroll: true },
     );
+  }
+
+  function clearStats() {
+    clearSeedStats();
+    seedStats = null;
   }
 </script>
 
@@ -186,7 +191,6 @@
       {misses}
       {elapsedMs}
       {theme}
-      {nextTheme}
       mode={data.mode}
       seed={data.seed}
       onRestart={resetRun}
@@ -198,8 +202,10 @@
       {started}
       {completed}
       runKey={`${data.mode}-${data.seed}-${runId}`}
+      {activeControl}
       {activeControlId}
       onClickControl={handleClickControl}
+      onClickMiss={handleClickMiss}
       onFormSubmit={handleFormSubmit}
       onScrollComplete={handleScrollComplete}
     />
@@ -227,6 +233,7 @@
       {seedStats}
       onRetry={resetRun}
       onNew={newSeed}
+      onClearStats={clearStats}
     />
   {/if}
 </main>

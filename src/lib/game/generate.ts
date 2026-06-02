@@ -6,7 +6,6 @@ import type {
 	GameModel,
 	GamePanel,
 	GameToken,
-	InlineControlType,
 	InlineGameControl,
 	PanelGameControl,
 	PanelId,
@@ -21,14 +20,10 @@ export function generateGame(
 	const random = new Random(seed);
 	const panels: GamePanel[] = [];
 	const controls: GameControl[] = [];
-	const controlById: Record<string, GameControl> = {};
-	const panelControlById: Record<string, PanelGameControl> = {};
 	let controlNumber = 0;
 	const nextControlId = () => `control-${controlNumber++}`;
 	const addControl = <T extends GameControl>(control: T) => {
 		controls.push(control);
-		controlById[control.id] = control;
-		if (control.type !== 'overlay') panelControlById[control.id] = control;
 		return control;
 	};
 	const createPanels = (
@@ -60,9 +55,7 @@ export function generateGame(
 			mode,
 			panels,
 			horizontalTokens: [],
-			controlById,
-			panelControlById,
-			tasks: shuffle(random, controls).map((control) => ({ controlId: control.id })),
+			tasks: shuffle(random, controls),
 		};
 	}
 
@@ -92,7 +85,7 @@ export function generateGame(
 
 		for (let index = 0; index < 180; index += 1) {
 			if (index === 90) {
-				horizontalTokens.push({ kind: 'control', controlId: horizontalControl.id });
+				horizontalTokens.push({ kind: 'control', control: horizontalControl });
 			}
 
 			horizontalTokens.push({ kind: 'word', text: random.pick(words) });
@@ -109,16 +102,14 @@ export function generateGame(
 			mode,
 			panels,
 			horizontalTokens,
-			controlById,
-			panelControlById,
-			tasks: taskControls.map((control) => ({ controlId: control.id })),
+			tasks: taskControls,
 		};
 	}
 
 	createPanels(
 		(count) => count,
 		(panelId) => {
-			const type: InlineControlType = random.chance(defaultConfig.writeChance) ? 'write' : 'click';
+			const type = random.chance(defaultConfig.writeChance) ? 'write' : 'click';
 			return addControl({
 				id: nextControlId(),
 				panelId,
@@ -157,9 +148,7 @@ export function generateGame(
 		mode,
 		panels,
 		horizontalTokens: [],
-		controlById,
-		panelControlById,
-		tasks: taskControls.map((control) => ({ controlId: control.id })),
+		tasks: taskControls,
 	};
 }
 
@@ -180,7 +169,7 @@ function createPanelTokens(
 
 		if (index === nextControlAt) {
 			const control = createControl();
-			tokens.push({ kind: 'control', controlId: control.id });
+			tokens.push({ kind: 'control', control });
 			nextControlAt += random.int(
 				defaultConfig.controlSpacing.min,
 				defaultConfig.controlSpacing.max,

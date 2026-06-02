@@ -13,7 +13,6 @@
 		mode,
 		seed,
 		theme,
-		nextTheme,
 		onRestart,
 		onToggleTheme
 	}: {
@@ -24,12 +23,12 @@
 		mode: GameMode;
 		seed: string;
 		theme: Theme;
-		nextTheme: Theme;
 		onRestart: () => void;
 		onToggleTheme: () => void;
 	} = $props();
 
 	const modes: readonly GameMode[] = ['default', 'click', 'scroll'];
+	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 
 	function modeHref(nextMode: GameMode) {
 		return resolve('/play/[mode]/[seed]', { mode: nextMode, seed });

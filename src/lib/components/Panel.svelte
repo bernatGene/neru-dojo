@@ -1,12 +1,13 @@
 <script lang="ts">
 	import InlineControl from './InlineControl.svelte';
-	import type { GameControl, GamePanel, InlineGameControl } from '$lib/game/types';
+	import type { GameControl, GamePanel, PanelGameControl } from '$lib/game/types';
 
 	let {
 		panel,
 		controlById,
 		activeControlId,
 		hint,
+		endPadding = false,
 		onClickControl,
 		onFormSubmit,
 		onScroll
@@ -15,6 +16,7 @@
 		controlById: Record<string, GameControl>;
 		activeControlId: string | null;
 		hint: string | null;
+		endPadding?: boolean;
 		onClickControl: (id: string) => void;
 		onFormSubmit: (id: string, value: string) => void;
 		onScroll: () => void;
@@ -22,7 +24,7 @@
 
 	let bottomHint = $derived(Boolean(hint?.includes('down') || hint?.includes('bottom')));
 
-	function getInlineControl(controlId: string): InlineGameControl {
+	function getPanelControl(controlId: string): PanelGameControl {
 		const control = controlById[controlId];
 
 		if (control.type === 'overlay') {
@@ -52,6 +54,10 @@
 		{/if}
 
 		<div class="max-w-none">
+			{#if endPadding}
+				<span class="block h-[45vh]"></span>
+			{/if}
+
 			{#each panel.tokens as token}
 				{#if token.kind === 'word'}
 					<span class="mr-2 inline-block">{token.text}</span>
@@ -59,13 +65,17 @@
 					<span class="block h-8"></span>
 				{:else}
 					<InlineControl
-						control={getInlineControl(token.controlId)}
+						control={getPanelControl(token.controlId)}
 						active={token.controlId === activeControlId}
 						{onClickControl}
 						{onFormSubmit}
 					/>
 				{/if}
 			{/each}
+
+			{#if endPadding}
+				<span class="block h-[45vh]"></span>
+			{/if}
 		</div>
 
 		{#if hint && bottomHint}

@@ -23,6 +23,31 @@ export function getScrollHint(panel: HTMLElement, target: HTMLElement) {
 	return targetRect.top < panelRect.top ? `scroll up ${percent}%` : `scroll down ${percent}%`;
 }
 
+export function getHorizontalScrollHint(panel: HTMLElement, target: HTMLElement) {
+	const panelRect = panel.getBoundingClientRect();
+	const targetRect = target.getBoundingClientRect();
+	const visible = targetRect.left >= panelRect.left && targetRect.right <= panelRect.right;
+
+	if (visible) {
+		return null;
+	}
+
+	const targetLeft = targetRect.left - panelRect.left + panel.scrollLeft;
+	const targetMiddle = targetLeft + target.offsetWidth / 2;
+	const percent = clamp(Math.round((targetMiddle / panel.scrollWidth) * 100), 0, 100);
+	const maxScroll = panel.scrollWidth - panel.clientWidth;
+
+	if (targetLeft + target.offsetWidth <= panel.clientWidth) {
+		return `scroll left ${percent}%`;
+	}
+
+	if (targetLeft >= maxScroll) {
+		return `scroll right ${percent}%`;
+	}
+
+	return targetRect.left < panelRect.left ? `scroll left ${percent}%` : `scroll right ${percent}%`;
+}
+
 function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max);
 }

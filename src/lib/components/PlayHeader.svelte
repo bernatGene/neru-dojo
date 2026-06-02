@@ -29,7 +29,7 @@
 		onToggleTheme: () => void;
 	} = $props();
 
-	const modes: readonly GameMode[] = ['default', 'overlay'];
+	const modes: readonly GameMode[] = ['default', 'click', 'scroll'];
 
 	function modeHref(nextMode: GameMode) {
 		return resolve('/play/[mode]/[seed]', { mode: nextMode, seed });

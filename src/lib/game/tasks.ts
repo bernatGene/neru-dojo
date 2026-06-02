@@ -20,6 +20,10 @@ export function isWriteTask(
 	);
 }
 
+export function isScrollTask(game: GameModel, activeControlId: string | null, controlId: string) {
+	return controlId === activeControlId && game.controlById[controlId].type === 'scroll';
+}
+
 function normalizeText(value: string) {
 	return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }

@@ -7,7 +7,7 @@
   import Results from "$lib/components/Results.svelte";
   import { generateGame } from "$lib/game/generate";
   import { createSeed } from "$lib/game/seed";
-  import { saveSeedStats, type SeedStats } from "$lib/game/seedResults";
+  import { clearSeedStats, saveSeedStats, type SeedStats } from "$lib/game/seedResults";
   import type { PageData } from "./$types";
 
   type Theme = "light" | "dark";
@@ -160,6 +160,11 @@
       { noScroll: true },
     );
   }
+
+  function clearStats() {
+    clearSeedStats();
+    seedStats = null;
+  }
 </script>
 
 <svelte:head>
@@ -223,6 +228,7 @@
       {seedStats}
       onRetry={resetRun}
       onNew={newSeed}
+      onClearStats={clearStats}
     />
   {/if}
 </main>

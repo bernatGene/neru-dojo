@@ -97,6 +97,10 @@
     if (!completeControl(controlId, "click")) misses += 1;
   }
 
+  function handleClickMiss() {
+    if (started && !completed) misses += 1;
+  }
+
   function handleFormSubmit(controlId: string, value: string) {
     if (!started || completed) return;
     if (!completeControl(controlId, "write", value)) misses += 1;
@@ -201,6 +205,7 @@
       {activeControl}
       {activeControlId}
       onClickControl={handleClickControl}
+      onClickMiss={handleClickMiss}
       onFormSubmit={handleFormSubmit}
       onScrollComplete={handleScrollComplete}
     />

@@ -27,6 +27,7 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 		activeControl,
 		activeControlId,
 		onClickControl,
+		onClickMiss,
 		onFormSubmit,
 		onScrollComplete
 	}: {
@@ -37,6 +38,7 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 		activeControl: GameControl | null;
 		activeControlId: string | null;
 		onClickControl: (id: string) => void;
+		onClickMiss: () => void;
 		onFormSubmit: (id: string, value: string) => void;
 		onScrollComplete: (id: string) => void;
 	} = $props();
@@ -220,34 +222,39 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 			holdTimer = null;
 		}
 	}
+
+	function handleClickPanel() {
+		if (game.mode === 'click' && started && !completed) onClickMiss();
+	}
 </script>
 
 <div class="relative min-h-0 flex-1" bind:this={board}>
 		{#key runKey}
-			<div
-				class={game.mode === 'click'
-					? 'relative h-full w-full border-2 border-foreground-600 bg-background-100'
-					: game.mode === 'scroll'
-						? 'flex h-full flex-col gap-5'
-						: 'h-full'}
-			>
-				{#if game.mode !== 'click'}
-				<div
-					class={`grid min-h-0 gap-5 ${game.mode === 'scroll' ? 'flex-1' : 'h-full'}`}
-					style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);"
-				>
-					{#each game.panels as panel}
-						<Panel
-							{panel}
-							{activeControlId}
-							hint={activeHint?.panelId === panel.id ? activeHint.text : null}
-							endPadding={game.mode === 'scroll'}
-							{onClickControl}
-							{onFormSubmit}
-							onScroll={scheduleHintUpdate}
-						/>
-					{/each}
-				</div>
+			{#if game.mode === 'click'}
+				<button
+					type="button"
+					class="relative h-full w-full cursor-default border-2 border-foreground-600 bg-background-100"
+					onclick={handleClickPanel}
+					aria-label="Click panel"
+				></button>
+			{:else}
+				<div class={game.mode === 'scroll' ? 'flex h-full flex-col gap-5' : 'h-full'}>
+					<div
+						class={`grid min-h-0 gap-5 ${game.mode === 'scroll' ? 'flex-1' : 'h-full'}`}
+						style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);"
+					>
+						{#each game.panels as panel}
+							<Panel
+								{panel}
+								{activeControlId}
+								hint={activeHint?.panelId === panel.id ? activeHint.text : null}
+								endPadding={game.mode === 'scroll'}
+								{onClickControl}
+								{onFormSubmit}
+								onScroll={scheduleHintUpdate}
+							/>
+						{/each}
+					</div>
 
 				{#if game.mode === 'scroll'}
 					<Panel
@@ -261,8 +268,8 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 						onScroll={scheduleHintUpdate}
 					/>
 				{/if}
-				{/if}
-			</div>
+				</div>
+			{/if}
 		{/key}
 
 		{#if guide}

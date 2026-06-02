@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { asset, resolve } from '$app/paths';
-	import RunHeader from './RunHeader.svelte';
+	import { formatElapsed } from '$lib/game/time';
 	import type { GameMode } from '$lib/game/types';
 
 	type Theme = 'light' | 'dark';
@@ -51,7 +51,11 @@
 		{/each}
 	</nav>
 
-	<RunHeader {currentTask} {totalTasks} {misses} {elapsedMs} />
+	<header class="flex items-center justify-center gap-10 text-2xl text-foreground-600">
+		<span>task {Math.min(currentTask, totalTasks)}/{totalTasks}</span>
+		<span>misses {misses}</span>
+		<span>{formatElapsed(elapsedMs)}</span>
+	</header>
 
 	<div class="flex justify-self-end gap-3">
 		<button

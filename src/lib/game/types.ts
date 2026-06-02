@@ -2,7 +2,6 @@ export type PanelId = 'nav' | 'content' | 'meta';
 export type ScrollPanelId = PanelId | 'horizontal';
 export type GameMode = 'default' | 'click' | 'scroll';
 export type InlineControlType = 'click' | 'write';
-export type ControlType = InlineControlType | 'overlay' | 'scroll';
 
 export type GameToken =
 	| { kind: 'word'; text: string }
@@ -49,12 +48,11 @@ export type GameTask = {
 };
 
 export type GameModel = {
-	seed: string;
 	mode: GameMode;
 	panels: GamePanel[];
 	horizontalTokens: GameToken[];
-	controls: GameControl[];
 	controlById: Record<string, GameControl>;
+	panelControlById: Record<string, PanelGameControl>;
 	tasks: GameTask[];
 };
 

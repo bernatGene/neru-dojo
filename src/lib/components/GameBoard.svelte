@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { getHorizontalScrollHint, getScrollHint } from '$lib/game/scrollHints';
-	import HorizontalScrollPanel from './HorizontalScrollPanel.svelte';
 	import OverlayButton from './OverlayButton.svelte';
 	import Panel from './Panel.svelte';
 	import ScrollGuide from './ScrollGuide.svelte';
@@ -260,7 +259,7 @@ type Guide = {
 					{#each game.panels as panel}
 						<Panel
 							{panel}
-							controlById={game.controlById}
+							panelControlById={game.panelControlById}
 							{activeControlId}
 							hint={hints[panel.id]}
 							endPadding={game.mode === 'scroll'}
@@ -272,11 +271,15 @@ type Guide = {
 				</div>
 
 				{#if game.mode === 'scroll'}
-					<HorizontalScrollPanel
+					<Panel
+						panelId="horizontal"
 						tokens={game.horizontalTokens}
-						controlById={game.controlById}
 						{activeControlId}
 						hint={horizontalHint}
+						horizontal
+						panelControlById={game.panelControlById}
+						{onClickControl}
+						{onFormSubmit}
 						onScroll={scheduleHintUpdate}
 					/>
 				{/if}

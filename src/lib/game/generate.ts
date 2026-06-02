@@ -9,6 +9,7 @@ import type {
 	GameToken,
 	InlineControlType,
 	InlineGameControl,
+	ScrollGameControl,
 } from './types';
 
 export function generateGame(
@@ -22,7 +23,7 @@ export function generateGame(
 	const controlById: Record<string, GameControl> = {};
 	let controlNumber = 0;
 
-	if (mode === 'overlay') {
+	if (mode === 'click') {
 		for (let index = 0; index < defaultConfig.taskCount; index += 1) {
 			const control: GameControl = {
 				id: `control-${controlNumber}`,
@@ -43,9 +44,87 @@ export function generateGame(
 			seed,
 			mode,
 			panels,
+			horizontalTokens: [],
 			controls,
 			controlById,
 			tasks: shuffle(random, controls).map((control) => ({ controlId: control.id })),
+		};
+	}
+
+	if (mode === 'scroll') {
+		for (const panelConfig of defaultConfig.panels) {
+			const tokens: GameToken[] = [];
+			let nextControlAt = random.int(
+				defaultConfig.controlSpacing.min,
+				defaultConfig.controlSpacing.max,
+			);
+
+			for (let index = 0; index < Math.ceil(panelConfig.wordCount * 2.2); index += 1) {
+				if (index > 0 && index % defaultConfig.paragraphSize === 0) {
+					tokens.push({ kind: 'break' });
+				}
+
+				if (index === nextControlAt) {
+					const control: ScrollGameControl = {
+						id: `control-${controlNumber}`,
+						panelId: panelConfig.id,
+						type: 'scroll',
+						axis: 'vertical',
+						text: 'center me',
+						guidePosition: random.next(),
+					};
+
+					controls.push(control);
+					controlById[control.id] = control;
+					tokens.push({ kind: 'control', controlId: control.id });
+					controlNumber += 1;
+					nextControlAt += random.int(
+						defaultConfig.controlSpacing.min,
+						defaultConfig.controlSpacing.max,
+					);
+					continue;
+				}
+
+				tokens.push({ kind: 'word', text: random.pick(words) });
+			}
+
+			panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
+		}
+
+		const horizontalTokens: GameToken[] = [];
+		const horizontalControl: ScrollGameControl = {
+			id: `control-${controlNumber}`,
+			panelId: 'horizontal',
+			type: 'scroll',
+			axis: 'horizontal',
+			text: 'center me',
+			guidePosition: random.next(),
+		};
+
+		for (let index = 0; index < 180; index += 1) {
+			if (index === 90) {
+				horizontalTokens.push({ kind: 'control', controlId: horizontalControl.id });
+			}
+
+			horizontalTokens.push({ kind: 'word', text: random.pick(words) });
+		}
+
+		controls.push(horizontalControl);
+		controlById[horizontalControl.id] = horizontalControl;
+		const verticalControls = controls.filter(
+			(control): control is ScrollGameControl => control.type === 'scroll' && control.axis === 'vertical',
+		);
+		const taskControls = shuffle(random, verticalControls).slice(0, defaultConfig.taskCount - 1);
+		taskControls.splice(random.int(0, taskControls.length), 0, horizontalControl);
+
+		return {
+			seed,
+			mode,
+			panels,
+			horizontalTokens,
+			controls,
+			controlById,
+			tasks: taskControls.map((control) => ({ controlId: control.id })),
 		};
 	}
 
@@ -119,7 +198,7 @@ export function generateGame(
 	]);
 	const tasks: GameTask[] = taskControls.map((control) => ({ controlId: control.id }));
 
-	return { seed, mode, panels, controls, controlById, tasks };
+	return { seed, mode, panels, horizontalTokens: [], controls, controlById, tasks };
 }
 
 function createWriteText(random: Random, words: readonly string[]) {

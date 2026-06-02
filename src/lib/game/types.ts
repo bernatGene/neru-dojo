@@ -1,7 +1,8 @@
 export type PanelId = 'nav' | 'content' | 'meta';
-export type GameMode = 'default' | 'overlay';
+export type ScrollPanelId = PanelId | 'horizontal';
+export type GameMode = 'default' | 'click' | 'scroll';
 export type InlineControlType = 'click' | 'write';
-export type ControlType = InlineControlType | 'overlay';
+export type ControlType = InlineControlType | 'overlay' | 'scroll';
 
 export type GameToken =
 	| { kind: 'word'; text: string }
@@ -25,7 +26,17 @@ export type OverlayGameControl = {
 	height?: number;
 };
 
-export type GameControl = InlineGameControl | OverlayGameControl;
+export type ScrollGameControl = {
+	id: string;
+	panelId: ScrollPanelId;
+	type: 'scroll';
+	axis: 'vertical' | 'horizontal';
+	text: 'center me';
+	guidePosition: number;
+};
+
+export type PanelGameControl = InlineGameControl | ScrollGameControl;
+export type GameControl = InlineGameControl | OverlayGameControl | ScrollGameControl;
 
 export type GamePanel = {
 	id: PanelId;
@@ -41,6 +52,7 @@ export type GameModel = {
 	seed: string;
 	mode: GameMode;
 	panels: GamePanel[];
+	horizontalTokens: GameToken[];
 	controls: GameControl[];
 	controlById: Record<string, GameControl>;
 	tasks: GameTask[];

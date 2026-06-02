@@ -8,7 +8,7 @@
   import { generateGame } from "$lib/game/generate";
   import { createSeed } from "$lib/game/seed";
   import { saveSeedStats, type SeedStats } from "$lib/game/seedResults";
-  import { isClickTask, isWriteTask } from "$lib/game/tasks";
+  import { isClickTask, isScrollTask, isWriteTask } from "$lib/game/tasks";
   import type { PageData } from "./$types";
 
   type Theme = "light" | "dark";
@@ -120,6 +120,16 @@
     misses += 1;
   }
 
+  function handleScrollComplete(controlId: string) {
+    if (!started || completed) {
+      return;
+    }
+
+    if (isScrollTask(game, activeControlId, controlId)) {
+      advanceTask();
+    }
+  }
+
   function advanceTask() {
     const nextTaskIndex = currentTaskIndex + 1;
 
@@ -191,6 +201,7 @@
       {activeControlId}
       onClickControl={handleClickControl}
       onFormSubmit={handleFormSubmit}
+      onScrollComplete={handleScrollComplete}
     />
   </section>
 
@@ -208,6 +219,14 @@
   {/if}
 
   {#if completed}
-    <Results seed={data.seed} {elapsedMs} {misses} {seedStats} onRetry={resetRun} onNew={newSeed} />
+    <Results
+      seed={data.seed}
+      mode={data.mode}
+      {elapsedMs}
+      {misses}
+      {seedStats}
+      onRetry={resetRun}
+      onNew={newSeed}
+    />
   {/if}
 </main>

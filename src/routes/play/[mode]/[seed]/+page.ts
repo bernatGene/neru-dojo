@@ -7,7 +7,7 @@ import type { PageLoad } from './$types';
 
 export const prerender = false;
 
-const gameModes: readonly GameMode[] = ['default', 'overlay'];
+const gameModes: readonly GameMode[] = ['default', 'click', 'scroll'];
 
 export const load: PageLoad = async ({ params, fetch }) => {
 	const mode = params.mode as GameMode;
@@ -23,6 +23,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	return {
 		mode,
 		seed: params.seed,
-		words: mode === 'overlay' ? [] : await loadWords(fetch, asset('/english.json')),
+		words: mode === 'click' ? [] : await loadWords(fetch, asset('/english.json')),
 	};
 };

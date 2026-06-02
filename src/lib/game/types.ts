@@ -1,6 +1,8 @@
 export type PanelId = 'nav' | 'content' | 'meta';
 export type ScrollPanelId = PanelId | 'horizontal';
-export type GameMode = 'default' | 'click' | 'scroll';
+export type GameMode = 'default' | 'click' | 'scroll' | 'menus';
+export type MenuUnfold = 'down-right' | 'down-left' | 'up-right' | 'up-left';
+export type NestedMenuNavigation = 'hover' | 'click';
 
 export type GameToken =
 	| { kind: 'word'; text: string }
@@ -33,8 +35,32 @@ export type ScrollGameControl = {
 	guidePosition: number;
 };
 
+export type ChoiceMenuGameControl = {
+	id: string;
+	type: 'menu';
+	menuType: 'dropdown' | 'scrollable';
+	x: number;
+	y: number;
+	unfold: MenuUnfold;
+	targetIndex: number;
+};
+
+export type NestedMenuGameControl = {
+	id: string;
+	type: 'menu';
+	menuType: 'nested';
+	x: number;
+	y: number;
+	unfold: MenuUnfold;
+	navigation: NestedMenuNavigation;
+	targetPath: number[];
+	columns: { itemCount: number }[];
+};
+
+export type MenuGameControl = ChoiceMenuGameControl | NestedMenuGameControl;
+
 export type PanelGameControl = InlineGameControl | ScrollGameControl;
-export type GameControl = InlineGameControl | OverlayGameControl | ScrollGameControl;
+export type GameControl = InlineGameControl | OverlayGameControl | ScrollGameControl | MenuGameControl;
 
 export type GamePanel = {
 	id: PanelId;
@@ -46,5 +72,6 @@ export type GameModel = {
 	mode: GameMode;
 	panels: GamePanel[];
 	horizontalTokens: GameToken[];
+	menuControls: MenuGameControl[];
 	tasks: GameControl[];
 };

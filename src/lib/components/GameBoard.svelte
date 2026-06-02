@@ -2,6 +2,7 @@
 	import { asset } from '$app/paths';
 	import { onMount, tick } from 'svelte';
 	import { getHorizontalScrollHint, getScrollHint } from '$lib/game/scrollHints';
+	import MenuArena from './MenuArena.svelte';
 	import OverlayButton from './OverlayButton.svelte';
 	import Panel from './Panel.svelte';
 	import type { GameControl, GameModel, ScrollGameControl } from '$lib/game/types';
@@ -51,6 +52,9 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 	let holdTimer: number | null = null;
 	let board = $state<HTMLElement | null>(null);
 	let guide = $state<Guide | null>(null);
+	let activeMenuControl = $derived(
+		started && !completed && activeControl?.type === 'menu' ? activeControl : null,
+	);
 
 	onMount(() => {
 		window.addEventListener('resize', scheduleHintUpdate);
@@ -89,7 +93,7 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 
 		const control = activeControl;
 
-		if (control.type === 'overlay') {
+		if (control.type === 'overlay' || control.type === 'menu') {
 			activeHint = null;
 			return;
 		}
@@ -254,6 +258,13 @@ type ControlElements = { panel: HTMLElement; target: HTMLElement } | null;
 					onclick={handleClickPanel}
 					aria-label="Click panel"
 				></button>
+			{:else if game.mode === 'menus'}
+				<MenuArena
+					controls={game.menuControls}
+					activeControl={activeMenuControl}
+					{onClickControl}
+					onClickMiss={started && !completed ? onClickMiss : () => {}}
+				/>
 			{:else}
 				<div class={game.mode === 'scroll' ? 'flex h-full flex-col gap-5' : 'h-full'}>
 					<div

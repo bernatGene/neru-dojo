@@ -102,7 +102,10 @@
     if (!started || completed || activeControl?.id !== controlId) return false;
 
     if (
-      (action === "click" && (activeControl.type === "click" || activeControl.type === "overlay")) ||
+      (action === "click" &&
+        (activeControl.type === "click" ||
+          activeControl.type === "overlay" ||
+          activeControl.type === "menu")) ||
       (action === "write" &&
         activeControl.type === "write" &&
         normalizeText(value) === activeControl.text) ||

@@ -27,7 +27,7 @@
 		onToggleTheme: () => void;
 	} = $props();
 
-	const modes: readonly GameMode[] = ['default', 'click', 'scroll'];
+	const modes: readonly GameMode[] = ['default', 'click', 'scroll', 'menus'];
 	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 
 	function modeHref(nextMode: GameMode) {

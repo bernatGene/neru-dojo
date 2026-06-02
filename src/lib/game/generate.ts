@@ -7,6 +7,7 @@ import type {
 	GamePanel,
 	GameToken,
 	InlineGameControl,
+	MenuGameControl,
 	PanelGameControl,
 	PanelId,
 	ScrollGameControl,
@@ -55,7 +56,26 @@ export function generateGame(
 			mode,
 			panels,
 			horizontalTokens: [],
+			menuControls: [],
 			tasks: shuffle(random, controls),
+		};
+	}
+
+	if (mode === 'menus') {
+		const menuControls = createMenuControls(random, nextControlId);
+		const tasks = [
+			...menuControls.map((control) => createMenuTask(random, control)),
+			...Array.from({ length: defaultConfig.taskCount - menuControls.length }, () =>
+				createMenuTask(random, random.pick(menuControls)),
+			),
+		];
+
+		return {
+			mode,
+			panels,
+			horizontalTokens: [],
+			menuControls,
+			tasks: shuffle(random, tasks),
 		};
 	}
 
@@ -102,6 +122,7 @@ export function generateGame(
 			mode,
 			panels,
 			horizontalTokens,
+			menuControls: [],
 			tasks: taskControls,
 		};
 	}
@@ -148,7 +169,75 @@ export function generateGame(
 		mode,
 		panels,
 		horizontalTokens: [],
+		menuControls: [],
 		tasks: taskControls,
+	};
+}
+
+function createMenuControls(random: Random, nextControlId: () => string) {
+	const dropdownPositions: Pick<MenuGameControl, 'x' | 'y' | 'unfold'>[] = [
+		{ x: 100, y: 0, unfold: 'down-left' },
+		{ x: 0, y: 100, unfold: 'up-right' },
+		{ x: 100, y: 100, unfold: 'up-left' },
+	];
+	const controls: MenuGameControl[] = dropdownPositions.map((control) => ({
+		id: nextControlId(),
+		type: 'menu',
+		menuType: 'dropdown',
+		targetIndex: random.int(0, 5),
+		...control,
+	}));
+	const scrollablePositions: Pick<MenuGameControl, 'x' | 'y' | 'unfold'>[] = [
+		{ x: 50, y: 50, unfold: 'down-right' },
+		{ x: 50, y: 0, unfold: 'down-right' },
+		{ x: 0, y: 50, unfold: 'down-right' },
+		{ x: 100, y: 50, unfold: 'down-left' },
+		{ x: 50, y: 100, unfold: 'up-right' },
+	];
+
+	for (const control of scrollablePositions) {
+		controls.push({
+			id: nextControlId(),
+			type: 'menu',
+			menuType: 'scrollable',
+			targetIndex: random.int(0, 19),
+			...control,
+		});
+	}
+	controls.push(createNestedMenuControl(random, nextControlId));
+
+	return shuffle(random, controls);
+}
+
+function createNestedMenuControl(random: Random, nextControlId: () => string): MenuGameControl {
+	const columns = Array.from({ length: 4 }, () => ({
+		itemCount: random.int(4, 7),
+	}));
+
+	return {
+		id: nextControlId(),
+		type: 'menu',
+		menuType: 'nested',
+		x: 0,
+		y: 0,
+		unfold: 'down-right',
+		navigation: 'hover',
+		targetPath: columns.map((column) => random.int(0, column.itemCount - 1)),
+		columns,
+	};
+}
+
+function createMenuTask(random: Random, control: MenuGameControl): MenuGameControl {
+	if (control.menuType === 'nested') {
+		return {
+			...control,
+			targetPath: control.columns.map((column) => random.int(0, column.itemCount - 1)),
+		};
+	}
+
+	return {
+		...control,
+		targetIndex: random.int(0, control.menuType === 'scrollable' ? 19 : 5),
 	};
 }
 

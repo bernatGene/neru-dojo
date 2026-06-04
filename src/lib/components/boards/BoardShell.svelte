@@ -29,7 +29,7 @@
 
 <svelte:window onkeydown={handleStartKeydown} />
 
-<div class="relative min-h-0 flex-1">
+<div class="relative h-full min-h-0">
 	{@render children()}
 
 	{#if !started && !completed}

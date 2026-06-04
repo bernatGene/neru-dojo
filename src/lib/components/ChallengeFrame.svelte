@@ -179,31 +179,33 @@
 			onToggleTheme={toggleTheme}
 		/>
 
-		{@render board({
-			game,
-			started,
-			completed,
-			runKey: `${mode}-${seed}-${runId}`,
-			activeControl,
-			activeControlId,
-			onClickControl: handleClickControl,
-			onClickMiss: handleClickMiss,
-			onFormSubmit: handleFormSubmit,
-			onScrollComplete: handleScrollComplete,
-			onStart: start,
-		})}
-	</section>
+		<div class="relative min-h-0 flex-1">
+			{@render board({
+				game,
+				started,
+				completed,
+				runKey: `${mode}-${seed}-${runId}`,
+				activeControl,
+				activeControlId,
+				onClickControl: handleClickControl,
+				onClickMiss: handleClickMiss,
+				onFormSubmit: handleFormSubmit,
+				onScrollComplete: handleScrollComplete,
+				onStart: start,
+			})}
 
-	{#if completed}
-		<Results
-			{seed}
-			{mode}
-			{elapsedMs}
-			{misses}
-			{seedStats}
-			onRetry={resetRun}
-			onNew={newSeed}
-			onClearStats={clearStats}
-		/>
-	{/if}
+			{#if completed}
+				<Results
+					{seed}
+					{mode}
+					{elapsedMs}
+					{misses}
+					{seedStats}
+					onRetry={resetRun}
+					onNew={newSeed}
+					onClearStats={clearStats}
+				/>
+			{/if}
+		</div>
+	</section>
 </main>

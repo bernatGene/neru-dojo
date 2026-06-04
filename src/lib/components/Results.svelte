@@ -25,7 +25,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-30 flex items-center justify-center bg-background-100/95 px-6 font-mono text-foreground-600"
+	class="absolute inset-0 z-30 flex items-center justify-center bg-background-100/95 px-6 font-mono text-foreground-600"
 >
 	<section class="w-full max-w-xl border-2 border-foreground-600 bg-background-100 p-8">
 		<h2 class="text-4xl font-medium">results @ {seed} {mode}</h2>

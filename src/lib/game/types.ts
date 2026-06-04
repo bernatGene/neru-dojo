@@ -60,7 +60,11 @@ export type NestedMenuGameControl = {
 export type MenuGameControl = ChoiceMenuGameControl | NestedMenuGameControl;
 
 export type PanelGameControl = InlineGameControl | ScrollGameControl;
-export type GameControl = InlineGameControl | OverlayGameControl | ScrollGameControl | MenuGameControl;
+export type GameControl =
+	| InlineGameControl
+	| OverlayGameControl
+	| ScrollGameControl
+	| MenuGameControl;
 
 export type GamePanel = {
 	id: PanelId;

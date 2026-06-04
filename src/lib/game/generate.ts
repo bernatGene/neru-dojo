@@ -2,7 +2,6 @@ import { defaultConfig } from './config';
 import { Random } from './random';
 import type {
 	GameControl,
-	GameMode,
 	GameModel,
 	GamePanel,
 	GameToken,
@@ -13,119 +12,120 @@ import type {
 	ScrollGameControl,
 } from './types';
 
-export function generateGame(
-	seed: string,
-	words: readonly string[],
-	mode: GameMode = 'default',
-): GameModel {
+export function generateClickGame(seed: string): GameModel {
 	const random = new Random(seed);
-	const panels: GamePanel[] = [];
 	const controls: GameControl[] = [];
 	let controlNumber = 0;
 	const nextControlId = () => `control-${controlNumber++}`;
+
+	for (let index = 0; index < defaultConfig.taskCount; index += 1) {
+		controls.push({
+			id: nextControlId(),
+			type: 'overlay',
+			text: '',
+			x: random.int(10, 90),
+			y: random.int(10, 90),
+			width: random.int(12, 64),
+			height: random.int(12, 64),
+		});
+	}
+
+	return {
+		mode: 'click',
+		panels: [],
+		horizontalTokens: [],
+		menuControls: [],
+		tasks: shuffle(random, controls),
+	};
+}
+
+export function generateMenusGame(seed: string): GameModel {
+	const random = new Random(seed);
+	const menuControls = createMenuControls(random, createControlIdFactory());
+	const tasks = [
+		...menuControls.map((control) => createMenuTask(random, control)),
+		...Array.from({ length: defaultConfig.taskCount - menuControls.length }, () =>
+			createMenuTask(random, random.pick(menuControls)),
+		),
+	];
+
+	return {
+		mode: 'menus',
+		panels: [],
+		horizontalTokens: [],
+		menuControls,
+		tasks: shuffle(random, tasks),
+	};
+}
+
+export function generateScrollGame(seed: string, words: readonly string[]): GameModel {
+	const random = new Random(seed);
+	const panels: GamePanel[] = [];
+	const controls: GameControl[] = [];
+	const nextControlId = createControlIdFactory();
 	const addControl = <T extends GameControl>(control: T) => {
 		controls.push(control);
 		return control;
 	};
-	const createPanels = (
-		wordCount: (count: number) => number,
-		createControl: (panelId: PanelId) => PanelGameControl,
-	) => {
-		for (const panelConfig of defaultConfig.panels) {
-			const tokens = createPanelTokens(random, words, wordCount(panelConfig.wordCount), () =>
-				createControl(panelConfig.id),
-			);
-			panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
-		}
-	};
+	const createPanels = createPanelFactory(random, words, panels);
 
-	if (mode === 'click') {
-		for (let index = 0; index < defaultConfig.taskCount; index += 1) {
+	createPanels(
+		(count) => Math.ceil(count * 2.2),
+		(panelId) =>
 			addControl({
 				id: nextControlId(),
-				type: 'overlay',
-				text: '',
-				x: random.int(10, 90),
-				y: random.int(10, 90),
-				width: random.int(12, 64),
-				height: random.int(12, 64),
-			});
+				panelId,
+				type: 'scroll',
+				axis: 'vertical',
+				text: 'center me',
+				guidePosition: random.next(),
+			}),
+	);
+
+	const horizontalTokens: GameToken[] = [];
+	const horizontalControl = addControl({
+		id: nextControlId(),
+		panelId: 'horizontal',
+		type: 'scroll',
+		axis: 'horizontal',
+		text: 'center me',
+		guidePosition: random.next(),
+	});
+
+	for (let index = 0; index < 180; index += 1) {
+		if (index === 90) {
+			horizontalTokens.push({ kind: 'control', control: horizontalControl });
 		}
 
-		return {
-			mode,
-			panels,
-			horizontalTokens: [],
-			menuControls: [],
-			tasks: shuffle(random, controls),
-		};
+		horizontalTokens.push({ kind: 'word', text: random.pick(words) });
 	}
 
-	if (mode === 'menus') {
-		const menuControls = createMenuControls(random, nextControlId);
-		const tasks = [
-			...menuControls.map((control) => createMenuTask(random, control)),
-			...Array.from({ length: defaultConfig.taskCount - menuControls.length }, () =>
-				createMenuTask(random, random.pick(menuControls)),
-			),
-		];
+	const verticalControls = controls.filter(
+		(control): control is ScrollGameControl =>
+			control.type === 'scroll' && control.axis === 'vertical',
+	);
+	const taskControls = shuffle(random, verticalControls).slice(0, defaultConfig.taskCount - 1);
+	taskControls.splice(random.int(0, taskControls.length), 0, horizontalControl);
 
-		return {
-			mode,
-			panels,
-			horizontalTokens: [],
-			menuControls,
-			tasks: shuffle(random, tasks),
-		};
-	}
+	return {
+		mode: 'scroll',
+		panels,
+		horizontalTokens,
+		menuControls: [],
+		tasks: taskControls,
+	};
+}
 
-	if (mode === 'scroll') {
-		createPanels(
-			(count) => Math.ceil(count * 2.2),
-			(panelId) =>
-				addControl({
-					id: nextControlId(),
-					panelId,
-					type: 'scroll',
-					axis: 'vertical',
-					text: 'center me',
-					guidePosition: random.next(),
-				}),
-		);
-
-		const horizontalTokens: GameToken[] = [];
-		const horizontalControl = addControl({
-			id: nextControlId(),
-			panelId: 'horizontal',
-			type: 'scroll',
-			axis: 'horizontal',
-			text: 'center me',
-			guidePosition: random.next(),
-		});
-
-		for (let index = 0; index < 180; index += 1) {
-			if (index === 90) {
-				horizontalTokens.push({ kind: 'control', control: horizontalControl });
-			}
-
-			horizontalTokens.push({ kind: 'word', text: random.pick(words) });
-		}
-
-		const verticalControls = controls.filter(
-			(control): control is ScrollGameControl =>
-				control.type === 'scroll' && control.axis === 'vertical',
-		);
-		const taskControls = shuffle(random, verticalControls).slice(0, defaultConfig.taskCount - 1);
-		taskControls.splice(random.int(0, taskControls.length), 0, horizontalControl);
-
-		return {
-			mode,
-			panels,
-			horizontalTokens,
-			menuControls: [],
-			tasks: taskControls,
-		};
-	}
+export function generateDefaultGame(seed: string, words: readonly string[]): GameModel {
+	const random = new Random(seed);
+	const panels: GamePanel[] = [];
+	const controls: GameControl[] = [];
+	const nextControlId = createControlIdFactory();
+	const addControl = <T extends GameControl>(control: T) => {
+		controls.push(control);
+		return control;
+	};
+	const createPanels = createPanelFactory(random, words, panels);
 
 	createPanels(
 		(count) => count,
@@ -140,7 +140,8 @@ export function generateGame(
 		},
 	);
 
-	const taskCounts = getTaskCounts(defaultConfig.taskCount);
+	const defaultMenuControls = createDefaultMenuControls(random, nextControlId);
+	const taskCounts = getTaskCounts(defaultConfig.taskCount - defaultMenuControls.length);
 
 	for (let index = 0; index < taskCounts.overlay; index += 1) {
 		addControl({
@@ -163,15 +164,50 @@ export function generateGame(
 		...pickTaskControls(random, overlayControls, taskCounts.overlay, false),
 		...pickTaskControls(random, clickControls, taskCounts.click, true),
 		...pickTaskControls(random, writeControls, taskCounts.write, true),
+		...defaultMenuControls.map((control) => createMenuTask(random, control)),
 	]);
 
 	return {
-		mode,
+		mode: 'default',
 		panels,
 		horizontalTokens: [],
-		menuControls: [],
+		menuControls: defaultMenuControls,
 		tasks: taskControls,
 	};
+}
+
+function createControlIdFactory() {
+	let controlNumber = 0;
+	return () => `control-${controlNumber++}`;
+}
+
+function createPanelFactory(random: Random, words: readonly string[], panels: GamePanel[]) {
+	return (
+		wordCount: (count: number) => number,
+		createControl: (panelId: PanelId) => PanelGameControl,
+	) => {
+		for (const panelConfig of defaultConfig.panels) {
+			const tokens = createPanelTokens(random, words, wordCount(panelConfig.wordCount), () =>
+				createControl(panelConfig.id),
+			);
+			panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
+		}
+	};
+}
+
+function createDefaultMenuControls(random: Random, nextControlId: () => string) {
+	return [
+		createNestedMenuControl(random, nextControlId),
+		{
+			id: nextControlId(),
+			type: 'menu',
+			menuType: 'scrollable',
+			x: 50,
+			y: 0,
+			unfold: 'down-right',
+			targetIndex: random.int(0, 19),
+		},
+	] satisfies MenuGameControl[];
 }
 
 function createMenuControls(random: Random, nextControlId: () => string) {

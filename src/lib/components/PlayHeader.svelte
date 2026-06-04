@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { asset, resolve } from '$app/paths';
+	import { asset } from '$app/paths';
+	import { gameModes, modeHref as getModeHref } from '$lib/game/modes';
 	import { formatElapsed } from '$lib/game/time';
 	import type { GameMode } from '$lib/game/types';
 
@@ -27,17 +28,16 @@
 		onToggleTheme: () => void;
 	} = $props();
 
-	const modes: readonly GameMode[] = ['default', 'click', 'scroll', 'menus'];
 	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 
 	function modeHref(nextMode: GameMode) {
-		return resolve('/play/[mode]/[seed]', { mode: nextMode, seed });
+		return getModeHref(nextMode, seed);
 	}
 </script>
 
 <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
 	<nav class="flex justify-self-start border-2 border-foreground-600 text-xl" aria-label="Game mode">
-		{#each modes as item}
+		{#each gameModes as item}
 			<a
 				href={modeHref(item)}
 				class="px-5 py-3 outline-none hover:bg-foreground-600 hover:text-background-100 focus-visible:bg-highlight-500 focus-visible:text-background-100"

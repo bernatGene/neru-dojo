@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { modeHref } from '$lib/game/modes';
 	import { createSeed } from '$lib/game/seed';
 
 	onMount(() => {
-		goto(resolve('/play/[mode]/[seed]', { mode: 'default', seed: createSeed() }), {
+		goto(modeHref('default', createSeed()), {
 			replaceState: true,
 			noScroll: true,
 		});

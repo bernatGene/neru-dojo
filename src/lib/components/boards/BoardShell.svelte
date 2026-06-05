@@ -6,11 +6,13 @@
 		started,
 		completed,
 		onStart,
+		startContent,
 		children,
 	}: {
 		started: boolean;
 		completed: boolean;
 		onStart: () => void;
+		startContent?: Snippet;
 		children: Snippet;
 	} = $props();
 
@@ -38,6 +40,9 @@
 		>
 			<img src={asset('/neru-appicon.png')} alt="Neru" class="h-28 w-28" />
 			<span class="mt-8 text-4xl">neru-dojo</span>
+			{#if startContent}
+				{@render startContent()}
+			{/if}
 			<div class="mt-4 flex items-center gap-3 text-2xl">
 				<span>click</span>
 				<button

@@ -59,7 +59,7 @@ export function generateRecursiveGridGame(seed: string, config: RecursiveGridCon
 	}
 
 	return {
-		mode: 'grid',
+		mode: 'rgrid',
 		panels: [],
 		horizontalTokens: [],
 		menuControls: [],
@@ -121,7 +121,7 @@ function createRecursiveGridControl(
 
 	return {
 		id,
-		type: 'grid',
+		type: 'rgrid',
 		text: '',
 		x: left,
 		y: top,

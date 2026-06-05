@@ -114,7 +114,7 @@
 				(activeControl.type === 'click' ||
 					activeControl.type === 'overlay' ||
 					activeControl.type === 'menu' ||
-					activeControl.type === 'grid')) ||
+					activeControl.type === 'rgrid')) ||
 			(action === 'write' &&
 				activeControl.type === 'write' &&
 				normalizeText(value) === activeControl.text) ||

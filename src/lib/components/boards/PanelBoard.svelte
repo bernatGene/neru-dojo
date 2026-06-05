@@ -72,7 +72,7 @@
 			!activeControl ||
 			activeControl.type === 'overlay' ||
 			activeControl.type === 'menu' ||
-			activeControl.type === 'grid'
+			activeControl.type === 'rgrid'
 		) {
 			activeHint = null;
 			return;

@@ -11,7 +11,7 @@
 	} from '$lib/game/generate';
 	import type { PageData } from './$types';
 
-	const storageKey = 'neru-dojo-grid-config';
+	const storageKey = 'neru-dojo-rgrid-config';
 
 	let { data }: { data: PageData } = $props();
 	let config = $state<RecursiveGridConfig>(defaultRecursiveGridConfig);
@@ -43,7 +43,7 @@
 	}
 </script>
 
-<ChallengeFrame mode="grid" seed={data.seed} {game}>
+<ChallengeFrame mode="rgrid" seed={data.seed} {game}>
 	{#snippet startContent()}
 		<div class="mt-8 flex max-w-2xl flex-col gap-5 text-left text-2xl">
 			<p class="text-center">

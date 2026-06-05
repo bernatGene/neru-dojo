@@ -1,6 +1,6 @@
 export type PanelId = 'nav' | 'content' | 'meta';
 export type ScrollPanelId = PanelId | 'horizontal';
-export type GameMode = 'default' | 'click' | 'scroll' | 'menus' | 'grid';
+export type GameMode = 'default' | 'click' | 'scroll' | 'menus' | 'rgrid';
 export type MenuUnfold = 'down-right' | 'down-left' | 'up-right' | 'up-left';
 export type NestedMenuNavigation = 'hover' | 'click';
 
@@ -47,7 +47,7 @@ export type ChoiceMenuGameControl = {
 
 export type RecursiveGridGameControl = {
 	id: string;
-	type: 'grid';
+	type: 'rgrid';
 	text: '';
 	x: number;
 	y: number;

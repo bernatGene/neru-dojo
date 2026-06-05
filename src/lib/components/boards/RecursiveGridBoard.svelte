@@ -37,14 +37,14 @@
 				aria-label="Recursive grid miss area"
 			></button>
 
-			{#if activeControl?.type === 'grid'}
+			{#if activeControl?.type === 'rgrid'}
 				<button
 					type="button"
 					data-control-id={activeControl.id}
 					class="absolute z-10 border-2 border-highlight-600 bg-highlight-500 outline-none focus-visible:border-highlight-600"
 					style={`left: ${activeControl.x}%; top: ${activeControl.y}%; width: ${activeControl.width}%; height: ${activeControl.height}%;`}
 					onclick={() => onClickControl(activeControl.id)}
-					aria-label="Click grid target"
+					aria-label="Click rgrid target"
 				></button>
 			{/if}
 		</div>

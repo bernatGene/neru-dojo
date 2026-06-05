@@ -1,3 +1,4 @@
+import type { Snippet } from 'svelte';
 import type { GameControl, GameModel } from '$lib/game/types';
 
 export type BoardProps = {
@@ -12,4 +13,5 @@ export type BoardProps = {
 	onFormSubmit: (id: string, value: string) => void;
 	onScrollComplete: (id: string) => void;
 	onStart: () => void;
+	startContent?: Snippet;
 };

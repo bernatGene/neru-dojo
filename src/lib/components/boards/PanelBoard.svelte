@@ -65,7 +65,15 @@
 	}
 
 	function updateHints() {
-		if (!started || completed || !activeControlId || !activeControl || activeControl.type === 'overlay' || activeControl.type === 'menu') {
+		if (
+			!started ||
+			completed ||
+			!activeControlId ||
+			!activeControl ||
+			activeControl.type === 'overlay' ||
+			activeControl.type === 'menu' ||
+			activeControl.type === 'grid'
+		) {
 			activeHint = null;
 			return;
 		}

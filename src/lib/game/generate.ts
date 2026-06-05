@@ -9,8 +9,63 @@ import type {
 	MenuGameControl,
 	PanelGameControl,
 	PanelId,
+	RecursiveGridGameControl,
 	ScrollGameControl,
 } from './types';
+
+export type RecursiveGridConfig = {
+	rows: number;
+	cols: number;
+	levels: number;
+	targetsPerLevel: number;
+};
+
+export const defaultRecursiveGridConfig: RecursiveGridConfig = {
+	rows: 3,
+	cols: 3,
+	levels: 4,
+	targetsPerLevel: 5,
+};
+
+export const recursiveGridConfigLimits = {
+	rows: { min: 1, max: 6 },
+	cols: { min: 1, max: 6 },
+	levels: { min: 1, max: 9 },
+	targetsPerLevel: { min: 1, max: 20 },
+} satisfies Record<keyof RecursiveGridConfig, { min: number; max: number }>;
+
+export function clampRecursiveGridConfig(config: RecursiveGridConfig): RecursiveGridConfig {
+	return {
+		rows: clampInteger(config.rows, recursiveGridConfigLimits.rows),
+		cols: clampInteger(config.cols, recursiveGridConfigLimits.cols),
+		levels: clampInteger(config.levels, recursiveGridConfigLimits.levels),
+		targetsPerLevel: clampInteger(
+			config.targetsPerLevel,
+			recursiveGridConfigLimits.targetsPerLevel,
+		),
+	};
+}
+
+export function generateRecursiveGridGame(seed: string, config: RecursiveGridConfig): GameModel {
+	const random = new Random(seed);
+	const safeConfig = clampRecursiveGridConfig(config);
+	const tasks: RecursiveGridGameControl[] = [];
+	const nextControlId = createControlIdFactory();
+
+	for (let level = 1; level <= safeConfig.levels; level += 1) {
+		for (let index = 0; index < safeConfig.targetsPerLevel; index += 1) {
+			tasks.push(createRecursiveGridControl(random, nextControlId(), safeConfig, level));
+		}
+	}
+
+	return {
+		mode: 'grid',
+		panels: [],
+		horizontalTokens: [],
+		menuControls: [],
+		tasks,
+	};
+}
 
 export function generateClickGame(seed: string): GameModel {
 	const random = new Random(seed);
@@ -36,6 +91,42 @@ export function generateClickGame(seed: string): GameModel {
 		horizontalTokens: [],
 		menuControls: [],
 		tasks: shuffle(random, controls),
+	};
+}
+
+function clampInteger(value: number, limit: { min: number; max: number }) {
+	if (!Number.isFinite(value)) return limit.min;
+	return Math.min(Math.max(Math.trunc(value), limit.min), limit.max);
+}
+
+function createRecursiveGridControl(
+	random: Random,
+	id: string,
+	config: RecursiveGridConfig,
+	level: number,
+): RecursiveGridGameControl {
+	let left = 0;
+	let top = 0;
+	let width = 100;
+	let height = 100;
+
+	for (let depth = 0; depth < level; depth += 1) {
+		const cellWidth = width / config.cols;
+		const cellHeight = height / config.rows;
+		left += random.int(0, config.cols - 1) * cellWidth;
+		top += random.int(0, config.rows - 1) * cellHeight;
+		width = cellWidth;
+		height = cellHeight;
+	}
+
+	return {
+		id,
+		type: 'grid',
+		text: '',
+		x: left,
+		y: top,
+		width,
+		height,
 	};
 }
 

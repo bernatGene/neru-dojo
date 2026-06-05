@@ -1,6 +1,6 @@
 export type PanelId = 'nav' | 'content' | 'meta';
 export type ScrollPanelId = PanelId | 'horizontal';
-export type GameMode = 'default' | 'click' | 'scroll' | 'menus';
+export type GameMode = 'default' | 'click' | 'scroll' | 'menus' | 'grid';
 export type MenuUnfold = 'down-right' | 'down-left' | 'up-right' | 'up-left';
 export type NestedMenuNavigation = 'hover' | 'click';
 
@@ -45,6 +45,16 @@ export type ChoiceMenuGameControl = {
 	targetIndex: number;
 };
 
+export type RecursiveGridGameControl = {
+	id: string;
+	type: 'grid';
+	text: '';
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
+
 export type NestedMenuGameControl = {
 	id: string;
 	type: 'menu';
@@ -64,7 +74,8 @@ export type GameControl =
 	| InlineGameControl
 	| OverlayGameControl
 	| ScrollGameControl
-	| MenuGameControl;
+	| MenuGameControl
+	| RecursiveGridGameControl;
 
 export type GamePanel = {
 	id: PanelId;

@@ -19,11 +19,13 @@
 		seed,
 		game,
 		board,
+		startContent,
 	}: {
 		mode: GameMode;
 		seed: string;
 		game: GameModel;
 		board: Snippet<[BoardProps]>;
+		startContent?: Snippet;
 	} = $props();
 
 	let theme = $state<Theme>('light');
@@ -109,7 +111,10 @@
 
 		if (
 			(action === 'click' &&
-				(activeControl.type === 'click' || activeControl.type === 'overlay' || activeControl.type === 'menu')) ||
+				(activeControl.type === 'click' ||
+					activeControl.type === 'overlay' ||
+					activeControl.type === 'menu' ||
+					activeControl.type === 'grid')) ||
 			(action === 'write' &&
 				activeControl.type === 'write' &&
 				normalizeText(value) === activeControl.text) ||
@@ -192,6 +197,7 @@
 				onFormSubmit: handleFormSubmit,
 				onScrollComplete: handleScrollComplete,
 				onStart: start,
+				startContent,
 			})}
 
 			{#if completed}

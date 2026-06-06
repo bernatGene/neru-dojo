@@ -109,12 +109,17 @@ function createRecursiveGridControl(
 	let top = 0;
 	let width = 100;
 	let height = 100;
+	const path: { row: number; col: number }[] = [];
 
 	for (let depth = 0; depth < level; depth += 1) {
 		const cellWidth = width / config.cols;
 		const cellHeight = height / config.rows;
-		left += random.int(0, config.cols - 1) * cellWidth;
-		top += random.int(0, config.rows - 1) * cellHeight;
+		const col = random.int(0, config.cols - 1);
+		const row = random.int(0, config.rows - 1);
+
+		path.push({ row, col });
+		left += col * cellWidth;
+		top += row * cellHeight;
 		width = cellWidth;
 		height = cellHeight;
 	}
@@ -123,6 +128,9 @@ function createRecursiveGridControl(
 		id,
 		type: 'rgrid',
 		text: '',
+		path,
+		rows: config.rows,
+		cols: config.cols,
 		x: left,
 		y: top,
 		width,

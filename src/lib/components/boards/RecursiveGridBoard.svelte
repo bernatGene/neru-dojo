@@ -22,41 +22,72 @@
 	onMount(() => {
 		const update = () => {
 			fullscreenMetrics = getFullscreenMetrics();
+			requestAnimationFrame(() => {
+				fullscreenMetrics = getFullscreenMetrics();
+			});
 		};
 
 		update();
 
 		window.addEventListener('resize', update);
+		window.visualViewport?.addEventListener('resize', update);
 		document.addEventListener('fullscreenchange', update);
 
 		return () => {
 			window.removeEventListener('resize', update);
+			window.visualViewport?.removeEventListener('resize', update);
 			document.removeEventListener('fullscreenchange', update);
 		};
 	});
 
 	function getControlStyle(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedTopArea) {
+		if (typeof window === 'undefined') {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
-		const y = getReachableGridY(control);
-		const top = (y / 100) * fullscreenMetrics.screenHeight - fullscreenMetrics.topInset;
-		const height = (control.height / 100) * fullscreenMetrics.screenHeight;
+		let left = 0;
+		let right = window.innerWidth;
+		let top = 0;
+		let bottom = fullscreenMetrics?.hasReservedTopArea
+			? fullscreenMetrics.screenHeight
+			: window.innerHeight;
 
-		return `left: ${control.x}%; top: ${top}px; width: ${control.width}%; height: ${height}px;`;
+		for (const cell of control.path) {
+			[left, right] = divideAxis(left, right, cell.col, control.cols);
+			[top, bottom] = divideAxis(top, bottom, cell.row, control.rows);
+		}
+
+		if (fullscreenMetrics?.hasReservedTopArea) {
+			[top, bottom] = getReachableGridY(top, bottom);
+		}
+
+		return pixelStyle(left, top, right, bottom);
 	}
 
-	function getReachableGridY(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedTopArea) return control.y;
+	function divideAxis(start: number, end: number, index: number, count: number) {
+		const cellSize = Math.trunc((end - start) / count);
+		const cellStart = start + index * cellSize;
+		const cellEnd = index === count - 1 ? end : start + (index + 1) * cellSize;
 
-		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
-		const bottom = control.y + control.height;
+		return [cellStart, cellEnd] as const;
+	}
 
-		if (bottom > safeTopPercent) return control.y;
+	function pixelStyle(left: number, top: number, right: number, bottom: number) {
+		return `left: ${left}px; top: ${top}px; width: ${right - left}px; height: ${bottom - top}px;`;
+	}
 
-		const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
-		return control.y + steps * control.height;
+	function getReachableGridY(top: number, bottom: number) {
+		if (!fullscreenMetrics?.hasReservedTopArea) return [top, bottom] as const;
+
+		if (bottom > fullscreenMetrics.topInset) {
+			return [top - fullscreenMetrics.topInset, bottom - fullscreenMetrics.topInset] as const;
+		}
+
+		const height = bottom - top;
+		const steps = Math.ceil((fullscreenMetrics.topInset - bottom) / height) + 1;
+		const reachableTop = top + steps * height - fullscreenMetrics.topInset;
+
+		return [reachableTop, reachableTop + height] as const;
 	}
 
 	function handleMiss() {

@@ -5,13 +5,13 @@ export type FullscreenMetrics = {
 };
 
 export function getFullscreenMetrics(): FullscreenMetrics {
-	const screenHeight = window.screen.height;
-	const viewportHeight = window.innerHeight;
+	const screenHeight = Math.round(window.screen.height);
+	const viewportHeight = Math.round(window.innerHeight);
 	const topInset = Math.max(0, screenHeight - viewportHeight);
 
 	return {
 		screenHeight,
 		topInset,
-		hasReservedTopArea: document.fullscreenElement !== null && topInset > 0,
+		hasReservedTopArea: topInset > 0,
 	};
 }

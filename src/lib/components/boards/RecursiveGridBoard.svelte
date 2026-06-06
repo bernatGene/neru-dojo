@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { getFullscreenMetrics, type FullscreenMetrics } from '$lib/browser/fullscreenMetrics';
+	import type { RecursiveGridGameControl } from '$lib/game/types';
 	import BoardShell from './BoardShell.svelte';
 	import type { BoardProps } from './types';
 
@@ -12,6 +15,53 @@
 		onStart,
 		startContent,
 	}: BoardProps = $props();
+
+	let fullscreenMetrics = $state<FullscreenMetrics | null>(null);
+	let controlStyle = $derived(activeControl?.type === 'rgrid' ? getControlStyle(activeControl) : '');
+
+	onMount(() => {
+		updateFullscreenMetrics();
+
+		window.addEventListener('resize', updateFullscreenMetrics);
+		document.addEventListener('fullscreenchange', updateFullscreenMetrics);
+
+		return () => {
+			window.removeEventListener('resize', updateFullscreenMetrics);
+			document.removeEventListener('fullscreenchange', updateFullscreenMetrics);
+		};
+	});
+
+	function updateFullscreenMetrics() {
+		fullscreenMetrics = getFullscreenMetrics();
+	}
+
+	function getControlStyle(control: NonNullable<typeof activeControl>) {
+		if (control.type !== 'rgrid') return '';
+
+		if (!fullscreenMetrics?.hasReservedArea) {
+			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
+		}
+
+		const y = getReachableGridY(control);
+		const left = (control.x / 100) * fullscreenMetrics.screenWidth - fullscreenMetrics.leftInset;
+		const top = (y / 100) * fullscreenMetrics.screenHeight - fullscreenMetrics.topInset;
+		const width = (control.width / 100) * fullscreenMetrics.screenWidth;
+		const height = (control.height / 100) * fullscreenMetrics.screenHeight;
+
+		return `left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;`;
+	}
+
+	function getReachableGridY(control: RecursiveGridGameControl) {
+		if (!fullscreenMetrics?.hasReservedArea) return control.y;
+
+		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
+		const bottom = control.y + control.height;
+
+		if (bottom > safeTopPercent) return control.y;
+
+		const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
+		return control.y + steps * control.height;
+	}
 
 	function handleMiss() {
 		if (started && !completed) onClickMiss();
@@ -42,7 +92,7 @@
 					type="button"
 					data-control-id={activeControl.id}
 					class="absolute z-10 border-2 border-highlight-600 bg-highlight-500 outline-none focus-visible:border-highlight-600"
-					style={`left: ${activeControl.x}%; top: ${activeControl.y}%; width: ${activeControl.width}%; height: ${activeControl.height}%;`}
+					style={controlStyle}
 					onclick={() => onClickControl(activeControl.id)}
 					aria-label="Click rgrid target"
 				></button>

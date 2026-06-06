@@ -36,21 +36,19 @@
 	});
 
 	function getControlStyle(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedArea) {
+		if (!fullscreenMetrics?.hasReservedTopArea) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
 		const y = getReachableGridY(control);
-		const left = (control.x / 100) * fullscreenMetrics.screenWidth - fullscreenMetrics.leftInset;
 		const top = (y / 100) * fullscreenMetrics.screenHeight - fullscreenMetrics.topInset;
-		const width = (control.width / 100) * fullscreenMetrics.screenWidth;
 		const height = (control.height / 100) * fullscreenMetrics.screenHeight;
 
-		return `left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;`;
+		return `left: ${control.x}%; top: ${top}px; width: ${control.width}%; height: ${height}px;`;
 	}
 
 	function getReachableGridY(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedArea) return control.y;
+		if (!fullscreenMetrics?.hasReservedTopArea) return control.y;
 
 		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
 		const bottom = control.y + control.height;

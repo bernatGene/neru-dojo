@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getFullscreenMetrics, type FullscreenMetrics } from '$lib/browser/fullscreenMetrics';
 	import type { RecursiveGridGameControl } from '$lib/game/types';
 	import BoardShell from './BoardShell.svelte';
 	import type { BoardProps } from './types';
@@ -16,51 +15,49 @@
 		startContent,
 	}: BoardProps = $props();
 
-	let fullscreenMetrics = $state<FullscreenMetrics | null>(null);
+	let fullscreenMetrics = $state({ screenHeight: 0, topInset: 0, hasReservedTopArea: false });
 	let controlStyle = $derived(activeControl?.type === 'rgrid' ? getControlStyle(activeControl) : '');
 
 	onMount(() => {
-		updateFullscreenMetrics();
+		const update = () => {
+			const screenHeight = window.screen.height;
+			const topInset = Math.max(0, screenHeight - window.innerHeight);
 
-		window.addEventListener('resize', updateFullscreenMetrics);
-		document.addEventListener('fullscreenchange', updateFullscreenMetrics);
+			fullscreenMetrics = {
+				screenHeight,
+				topInset,
+				hasReservedTopArea: document.fullscreenElement !== null && topInset > 0,
+			};
+		};
+
+		update();
+
+		window.addEventListener('resize', update);
+		document.addEventListener('fullscreenchange', update);
 
 		return () => {
-			window.removeEventListener('resize', updateFullscreenMetrics);
-			document.removeEventListener('fullscreenchange', updateFullscreenMetrics);
+			window.removeEventListener('resize', update);
+			document.removeEventListener('fullscreenchange', update);
 		};
 	});
 
-	function updateFullscreenMetrics() {
-		fullscreenMetrics = getFullscreenMetrics();
-	}
-
-	function getControlStyle(control: NonNullable<typeof activeControl>) {
-		if (control.type !== 'rgrid') return '';
-
-		if (!fullscreenMetrics?.hasReservedArea) {
+	function getControlStyle(control: RecursiveGridGameControl) {
+		if (!fullscreenMetrics.hasReservedTopArea) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
-		const y = getReachableGridY(control);
-		const left = (control.x / 100) * fullscreenMetrics.screenWidth - fullscreenMetrics.leftInset;
+		let y = control.y;
+		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
+
+		if (y < safeTopPercent) {
+			const steps = Math.ceil((safeTopPercent - y) / control.height);
+			y += steps * control.height;
+		}
+
 		const top = (y / 100) * fullscreenMetrics.screenHeight - fullscreenMetrics.topInset;
-		const width = (control.width / 100) * fullscreenMetrics.screenWidth;
 		const height = (control.height / 100) * fullscreenMetrics.screenHeight;
 
-		return `left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;`;
-	}
-
-	function getReachableGridY(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedArea) return control.y;
-
-		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
-		const bottom = control.y + control.height;
-
-		if (bottom > safeTopPercent) return control.y;
-
-		const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
-		return control.y + steps * control.height;
+		return `left: ${control.x}%; top: ${top}px; width: ${control.width}%; height: ${height}px;`;
 	}
 
 	function handleMiss() {

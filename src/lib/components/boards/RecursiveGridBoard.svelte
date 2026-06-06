@@ -41,27 +41,31 @@
 	});
 
 	function getControlStyle(control: RecursiveGridGameControl) {
-		if (typeof window === 'undefined') {
+		if (typeof window === 'undefined' || !fullscreenMetrics) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
+		const metrics = fullscreenMetrics;
 		let left = 0;
-		let right = window.innerWidth;
+		let right = metrics.screenWidth;
 		let top = 0;
-		let bottom = fullscreenMetrics?.hasReservedTopArea
-			? fullscreenMetrics.screenHeight
-			: window.innerHeight;
+		let bottom = metrics.screenHeight;
 
 		for (const cell of control.path) {
 			[left, right] = divideAxis(left, right, cell.col, control.cols);
 			[top, bottom] = divideAxis(top, bottom, cell.row, control.rows);
 		}
 
-		if (fullscreenMetrics?.hasReservedTopArea) {
-			[top, bottom] = getReachableGridY(top, bottom);
+		if (metrics.hasReservedArea) {
+			[top, bottom] = getReachableGridY(top, bottom, metrics.viewportTop);
 		}
 
-		return pixelStyle(left, top, right, bottom);
+		return pixelStyle(
+			(left - metrics.viewportLeft) * metrics.cssPerScreenX,
+			(top - metrics.viewportTop) * metrics.cssPerScreenY,
+			(right - metrics.viewportLeft) * metrics.cssPerScreenX,
+			(bottom - metrics.viewportTop) * metrics.cssPerScreenY,
+		);
 	}
 
 	function divideAxis(start: number, end: number, index: number, count: number) {
@@ -76,16 +80,14 @@
 		return `left: ${left}px; top: ${top}px; width: ${right - left}px; height: ${bottom - top}px;`;
 	}
 
-	function getReachableGridY(top: number, bottom: number) {
-		if (!fullscreenMetrics?.hasReservedTopArea) return [top, bottom] as const;
-
-		if (bottom > fullscreenMetrics.topInset) {
-			return [top - fullscreenMetrics.topInset, bottom - fullscreenMetrics.topInset] as const;
+	function getReachableGridY(top: number, bottom: number, viewportTop: number) {
+		if (bottom > viewportTop) {
+			return [top, bottom] as const;
 		}
 
 		const height = bottom - top;
-		const steps = Math.ceil((fullscreenMetrics.topInset - bottom) / height) + 1;
-		const reachableTop = top + steps * height - fullscreenMetrics.topInset;
+		const steps = Math.floor((viewportTop - bottom) / height) + 1;
+		const reachableTop = top + steps * height;
 
 		return [reachableTop, reachableTop + height] as const;
 	}

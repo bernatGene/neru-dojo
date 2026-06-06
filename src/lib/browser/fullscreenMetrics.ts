@@ -1,16 +1,28 @@
 export type FullscreenMetrics = {
+	screenWidth: number;
 	screenHeight: number;
+	viewportWidth: number;
+	viewportHeight: number;
+	leftInset: number;
 	topInset: number;
-	hasReservedTopArea: boolean;
+	hasReservedArea: boolean;
 };
 
 export function getFullscreenMetrics(): FullscreenMetrics {
+	const screenWidth = window.screen.width;
 	const screenHeight = window.screen.height;
-	const topInset = Math.max(0, screenHeight - window.innerHeight);
+	const viewportWidth = window.innerWidth;
+	const viewportHeight = window.innerHeight;
+	const leftInset = Math.max(0, screenWidth - viewportWidth);
+	const topInset = Math.max(0, screenHeight - viewportHeight);
 
 	return {
+		screenWidth,
 		screenHeight,
+		viewportWidth,
+		viewportHeight,
+		leftInset,
 		topInset,
-		hasReservedTopArea: document.fullscreenElement !== null && topInset > 0,
+		hasReservedArea: document.fullscreenElement !== null && (leftInset > 0 || topInset > 0),
 	};
 }

@@ -20,39 +20,47 @@
 	let controlStyle = $derived(activeControl?.type === 'rgrid' ? getControlStyle(activeControl) : '');
 
 	onMount(() => {
-		const update = () => {
-			fullscreenMetrics = getFullscreenMetrics();
-		};
+		updateFullscreenMetrics();
 
-		update();
-
-		window.addEventListener('resize', update);
-		document.addEventListener('fullscreenchange', update);
+		window.addEventListener('resize', updateFullscreenMetrics);
+		document.addEventListener('fullscreenchange', updateFullscreenMetrics);
 
 		return () => {
-			window.removeEventListener('resize', update);
-			document.removeEventListener('fullscreenchange', update);
+			window.removeEventListener('resize', updateFullscreenMetrics);
+			document.removeEventListener('fullscreenchange', updateFullscreenMetrics);
 		};
 	});
 
-	function getControlStyle(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics?.hasReservedTopArea) {
+	function updateFullscreenMetrics() {
+		fullscreenMetrics = getFullscreenMetrics();
+	}
+
+	function getControlStyle(control: NonNullable<typeof activeControl>) {
+		if (control.type !== 'rgrid') return '';
+
+		if (!fullscreenMetrics?.hasReservedArea) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
-		let y = control.y;
-		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
-		const bottom = y + control.height;
-
-		if (bottom <= safeTopPercent) {
-			const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
-			y += steps * control.height;
-		}
-
+		const y = getReachableGridY(control);
+		const left = (control.x / 100) * fullscreenMetrics.screenWidth - fullscreenMetrics.leftInset;
 		const top = (y / 100) * fullscreenMetrics.screenHeight - fullscreenMetrics.topInset;
+		const width = (control.width / 100) * fullscreenMetrics.screenWidth;
 		const height = (control.height / 100) * fullscreenMetrics.screenHeight;
 
-		return `left: ${control.x}%; top: ${top}px; width: ${control.width}%; height: ${height}px;`;
+		return `left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;`;
+	}
+
+	function getReachableGridY(control: RecursiveGridGameControl) {
+		if (!fullscreenMetrics?.hasReservedArea) return control.y;
+
+		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
+		const bottom = control.y + control.height;
+
+		if (bottom > safeTopPercent) return control.y;
+
+		const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
+		return control.y + steps * control.height;
 	}
 
 	function handleMiss() {

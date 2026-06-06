@@ -49,7 +49,6 @@ export type RecursiveGridGameControl = {
 	id: string;
 	type: 'rgrid';
 	text: '';
-	level: number;
 	x: number;
 	y: number;
 	width: number;

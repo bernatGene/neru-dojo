@@ -1,8 +1,6 @@
 export type FullscreenMetrics = {
 	screenWidth: number;
 	screenHeight: number;
-	viewportWidth: number;
-	viewportHeight: number;
 	leftInset: number;
 	topInset: number;
 	hasReservedArea: boolean;
@@ -19,8 +17,6 @@ export function getFullscreenMetrics(): FullscreenMetrics {
 	return {
 		screenWidth,
 		screenHeight,
-		viewportWidth,
-		viewportHeight,
 		leftInset,
 		topInset,
 		hasReservedArea: document.fullscreenElement !== null && (leftInset > 0 || topInset > 0),

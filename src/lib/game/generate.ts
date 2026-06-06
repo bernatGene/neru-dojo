@@ -123,7 +123,6 @@ function createRecursiveGridControl(
 		id,
 		type: 'rgrid',
 		text: '',
-		level,
 		x: left,
 		y: top,
 		width,

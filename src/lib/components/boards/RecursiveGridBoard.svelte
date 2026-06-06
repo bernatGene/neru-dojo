@@ -20,24 +20,22 @@
 	let controlStyle = $derived(activeControl?.type === 'rgrid' ? getControlStyle(activeControl) : '');
 
 	onMount(() => {
-		updateFullscreenMetrics();
+		const update = () => {
+			fullscreenMetrics = getFullscreenMetrics();
+		};
 
-		window.addEventListener('resize', updateFullscreenMetrics);
-		document.addEventListener('fullscreenchange', updateFullscreenMetrics);
+		update();
+
+		window.addEventListener('resize', update);
+		document.addEventListener('fullscreenchange', update);
 
 		return () => {
-			window.removeEventListener('resize', updateFullscreenMetrics);
-			document.removeEventListener('fullscreenchange', updateFullscreenMetrics);
+			window.removeEventListener('resize', update);
+			document.removeEventListener('fullscreenchange', update);
 		};
 	});
 
-	function updateFullscreenMetrics() {
-		fullscreenMetrics = getFullscreenMetrics();
-	}
-
-	function getControlStyle(control: NonNullable<typeof activeControl>) {
-		if (control.type !== 'rgrid') return '';
-
+	function getControlStyle(control: RecursiveGridGameControl) {
 		if (!fullscreenMetrics?.hasReservedArea) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}

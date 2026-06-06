@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { getFullscreenMetrics, type FullscreenMetrics } from '$lib/browser/fullscreenMetrics';
 	import type { RecursiveGridGameControl } from '$lib/game/types';
 	import BoardShell from './BoardShell.svelte';
 	import type { BoardProps } from './types';
@@ -15,19 +16,12 @@
 		startContent,
 	}: BoardProps = $props();
 
-	let fullscreenMetrics = $state({ screenHeight: 0, topInset: 0, hasReservedTopArea: false });
+	let fullscreenMetrics = $state<FullscreenMetrics | null>(null);
 	let controlStyle = $derived(activeControl?.type === 'rgrid' ? getControlStyle(activeControl) : '');
 
 	onMount(() => {
 		const update = () => {
-			const screenHeight = window.screen.height;
-			const topInset = Math.max(0, screenHeight - window.innerHeight);
-
-			fullscreenMetrics = {
-				screenHeight,
-				topInset,
-				hasReservedTopArea: document.fullscreenElement !== null && topInset > 0,
-			};
+			fullscreenMetrics = getFullscreenMetrics();
 		};
 
 		update();
@@ -42,15 +36,16 @@
 	});
 
 	function getControlStyle(control: RecursiveGridGameControl) {
-		if (!fullscreenMetrics.hasReservedTopArea) {
+		if (!fullscreenMetrics?.hasReservedTopArea) {
 			return `left: ${control.x}%; top: ${control.y}%; width: ${control.width}%; height: ${control.height}%;`;
 		}
 
 		let y = control.y;
 		const safeTopPercent = (fullscreenMetrics.topInset / fullscreenMetrics.screenHeight) * 100;
+		const bottom = y + control.height;
 
-		if (y < safeTopPercent) {
-			const steps = Math.ceil((safeTopPercent - y) / control.height);
+		if (bottom <= safeTopPercent) {
+			const steps = Math.ceil((safeTopPercent - bottom) / control.height) + 1;
 			y += steps * control.height;
 		}
 

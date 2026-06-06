@@ -3,11 +3,10 @@ import type { GameMode } from './types';
 
 export const gameModes: readonly GameMode[] = ['default', 'click', 'scroll', 'menus', 'rgrid'];
 
-export function modeHref(mode: GameMode, seed: string) {
-	if (mode === 'click') return resolve('/play/click/[seed]', { seed });
-	if (mode === 'scroll') return resolve('/play/scroll/[seed]', { seed });
-	if (mode === 'menus') return resolve('/play/menus/[seed]', { seed });
-	if (mode === 'rgrid') return resolve('/play/rgrid/[seed]', { seed });
+export function isGameMode(mode: string): mode is GameMode {
+	return gameModes.includes(mode as GameMode);
+}
 
-	return resolve('/play/default/[seed]', { seed });
+export function modeHref(mode: GameMode, seed: string) {
+	return `${resolve(`/play/${mode}`)}?seed=${encodeURIComponent(seed)}`;
 }

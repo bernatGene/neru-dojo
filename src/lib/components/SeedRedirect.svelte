@@ -3,9 +3,12 @@
 	import { onMount } from 'svelte';
 	import { modeHref } from '$lib/game/modes';
 	import { createSeed } from '$lib/game/seed';
+	import type { GameMode } from '$lib/game/types';
+
+	let { mode = 'default' }: { mode?: GameMode } = $props();
 
 	onMount(() => {
-		goto(modeHref('default', createSeed()), {
+		goto(modeHref(mode, createSeed()), {
 			replaceState: true,
 			noScroll: true,
 		});

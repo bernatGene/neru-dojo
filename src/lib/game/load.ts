@@ -3,11 +3,12 @@ import { error } from '@sveltejs/kit';
 import { isValidSeed } from './seed';
 import { loadWords } from './words';
 
-type SeedLoadEvent = { params: { seed: string }; fetch: typeof fetch };
+type SeedLoadEvent = { url: URL; fetch: typeof fetch };
 
-export const loadSeed = ({ params }: SeedLoadEvent) => {
-	if (!isValidSeed(params.seed)) error(404, 'Invalid seed');
-	return { seed: params.seed };
+export const loadSeed = ({ url }: SeedLoadEvent) => {
+	const seed = url.searchParams.get('seed');
+	if (seed !== null && !isValidSeed(seed)) error(404, 'Invalid seed');
+	return { seed };
 };
 
 export const loadSeedWithWords = async (event: SeedLoadEvent) => ({

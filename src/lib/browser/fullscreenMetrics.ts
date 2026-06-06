@@ -13,15 +13,13 @@ export function getFullscreenMetrics(): FullscreenMetrics {
 	const screenHeight = Math.round(window.screen.height);
 	const viewportCssWidth = window.visualViewport?.width ?? window.innerWidth;
 	const viewportCssHeight = window.visualViewport?.height ?? window.innerHeight;
-	const visibleScreenWidth = getVisibleScreenSize(screenWidth, viewportCssWidth, [
-		window.screen.availWidth,
-		window.outerWidth,
-	]);
-	const visibleScreenHeight = getVisibleScreenSize(screenHeight, viewportCssHeight, [
-		window.screen.availHeight,
-		window.outerHeight,
-	]);
-	const viewportLeft = Math.max(0, screenWidth - visibleScreenWidth);
+	const cssPerScreenX = getScale(viewportCssWidth, screenWidth);
+	const visibleScreenHeight = getVisibleScreenHeight(
+		screenHeight,
+		viewportCssHeight,
+		cssPerScreenX,
+	);
+	const viewportLeft = 0;
 	const viewportTop = Math.max(0, screenHeight - visibleScreenHeight);
 
 	return {
@@ -29,31 +27,32 @@ export function getFullscreenMetrics(): FullscreenMetrics {
 		screenHeight,
 		viewportLeft,
 		viewportTop,
-		cssPerScreenX: getScale(viewportCssWidth, visibleScreenWidth),
+		cssPerScreenX,
 		cssPerScreenY: getScale(viewportCssHeight, visibleScreenHeight),
 		hasReservedArea: viewportLeft > 0 || viewportTop > 0,
 	};
 }
 
-function getVisibleScreenSize(screenSize: number, viewportCssSize: number, candidates: number[]) {
-	for (const candidate of candidates) {
-		const size = Math.round(candidate);
-		if (Number.isFinite(size) && size > 0 && size < screenSize) return size;
+function getVisibleScreenHeight(
+	screenHeight: number,
+	viewportCssHeight: number,
+	cssPerScreenX: number,
+) {
+	const height = Math.round(viewportCssHeight / cssPerScreenX);
+	if (Number.isFinite(height) && height > 0) {
+		return Math.min(screenHeight, height);
 	}
 
-	if (
-		Number.isFinite(viewportCssSize) &&
-		viewportCssSize > 0 &&
-		viewportCssSize < screenSize
-	) {
-		return Math.round(viewportCssSize);
-	}
-
-	return screenSize;
+	return screenHeight;
 }
 
 function getScale(cssSize: number, screenSize: number) {
-	if (!Number.isFinite(cssSize) || !Number.isFinite(screenSize) || cssSize <= 0 || screenSize <= 0) {
+	if (
+		!Number.isFinite(cssSize) ||
+		!Number.isFinite(screenSize) ||
+		cssSize <= 0 ||
+		screenSize <= 0
+	) {
 		return 1;
 	}
 

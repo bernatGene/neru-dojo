@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import NestedMenu from '$lib/components/NestedMenu.svelte';
 	import OverlayButton from '$lib/components/OverlayButton.svelte';
 	import Panel from '$lib/components/Panel.svelte';
-	import ScrollableMenu from '$lib/components/ScrollableMenu.svelte';
 	import { getHorizontalScrollHint, getScrollHint } from '$lib/game/scrollHints';
-	import type { MenuGameControl, NestedMenuGameControl, ScrollGameControl } from '$lib/game/types';
+	import type { ScrollGameControl } from '$lib/game/types';
 	import BoardShell from './BoardShell.svelte';
 	import type { BoardProps } from './types';
 
@@ -21,7 +19,6 @@
 		activeControl,
 		activeControlId,
 		onClickControl,
-		onClickMiss,
 		onFormSubmit,
 		onScrollComplete,
 		onStart,
@@ -31,10 +28,8 @@
 	let activeHint = $state<ActiveHint>(null);
 	let measureFrame: number | null = null;
 	let holdTimer: number | null = null;
-	let openMenuId = $state<string | null>(null);
 	let board = $state<HTMLElement | null>(null);
 	let guide = $state<Guide | null>(null);
-	let activeMenuControl = $derived(!scroll && started && !completed && activeControl?.type === 'menu' ? activeControl : null);
 
 	onMount(() => {
 		window.addEventListener('resize', scheduleHintUpdate);
@@ -50,7 +45,6 @@
 		started;
 		completed;
 		runKey;
-		openMenuId = null;
 		cancelHold();
 		void tick().then(scheduleHintUpdate);
 	});
@@ -163,12 +157,6 @@
 			holdTimer = null;
 		}
 	}
-
-	function positionStyle(control: MenuGameControl) {
-		const translateX = control.x === 100 ? '-100%' : control.x === 50 ? '-50%' : '0';
-		const translateY = control.y === 100 ? '-100%' : control.y === 50 ? '-50%' : '0';
-		return `left: ${control.x}%; top: ${control.y}%; transform: translate(${translateX}, ${translateY});`;
-	}
 </script>
 
 <BoardShell {started} {completed} {onStart}>
@@ -198,16 +186,6 @@
 		{#if started && !completed && activeControl?.type === 'overlay'}
 			<div class="pointer-events-none absolute inset-0 z-10 bg-background-100/5 backdrop-blur-[1px]"></div>
 			<OverlayButton id={activeControl.id} x={activeControl.x} y={activeControl.y} width={activeControl.width} height={activeControl.height} onInteract={onClickControl} />
-		{/if}
-
-		{#if activeMenuControl}
-			<div class="absolute z-20" style={positionStyle(activeMenuControl)}>
-				{#if activeMenuControl.menuType === 'scrollable'}
-					<ScrollableMenu id={activeMenuControl.id} unfold={activeMenuControl.unfold} targetIndex={activeMenuControl.targetIndex} isOpen={openMenuId === activeMenuControl.id} onToggle={(id) => (openMenuId = openMenuId === id ? null : id)} onClose={() => (openMenuId = null)} onCorrect={(id) => { openMenuId = null; onClickControl(id); }} onMiss={() => { openMenuId = null; onClickMiss(); }} />
-				{:else if activeMenuControl.menuType === 'nested'}
-					<NestedMenu control={activeMenuControl as NestedMenuGameControl} isActive isOpen={openMenuId === activeMenuControl.id} onToggle={(id) => (openMenuId = openMenuId === id ? null : id)} onClose={() => (openMenuId = null)} onCorrect={(id) => { openMenuId = null; onClickControl(id); }} onMiss={() => { openMenuId = null; onClickMiss(); }} />
-				{/if}
-			</div>
 		{/if}
 	</div>
 </BoardShell>

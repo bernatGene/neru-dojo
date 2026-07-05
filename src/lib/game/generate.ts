@@ -239,8 +239,7 @@ export function generateDefaultGame(seed: string, words: readonly string[]): Gam
 		},
 	);
 
-	const defaultMenuControls = createDefaultMenuControls(random, nextControlId);
-	const taskCounts = getTaskCounts(defaultConfig.taskCount - defaultMenuControls.length);
+	const taskCounts = getTaskCounts(defaultConfig.taskCount);
 
 	for (let index = 0; index < taskCounts.overlay; index += 1) {
 		addControl({
@@ -263,14 +262,13 @@ export function generateDefaultGame(seed: string, words: readonly string[]): Gam
 		...pickTaskControls(random, overlayControls, taskCounts.overlay, false),
 		...pickTaskControls(random, clickControls, taskCounts.click, true),
 		...pickTaskControls(random, writeControls, taskCounts.write, true),
-		...defaultMenuControls.map((control) => createMenuTask(random, control)),
 	]);
 
 	return {
 		mode: 'default',
 		panels,
 		horizontalTokens: [],
-		menuControls: defaultMenuControls,
+		menuControls: [],
 		tasks: taskControls,
 	};
 }
@@ -292,21 +290,6 @@ function createPanelFactory(random: Random, words: readonly string[], panels: Ga
 			panels.push({ id: panelConfig.id, title: panelConfig.title, tokens });
 		}
 	};
-}
-
-function createDefaultMenuControls(random: Random, nextControlId: () => string) {
-	return [
-		createNestedMenuControl(random, nextControlId),
-		{
-			id: nextControlId(),
-			type: 'menu',
-			menuType: 'scrollable',
-			x: 50,
-			y: 0,
-			unfold: 'down-right',
-			targetIndex: random.int(0, 19),
-		},
-	] satisfies MenuGameControl[];
 }
 
 function createMenuControls(random: Random, nextControlId: () => string) {

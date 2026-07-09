@@ -22,15 +22,37 @@ export type RecursiveGridConfig = {
 
 export type DefaultGameConfig = {
 	textLengthMultiplier: number;
+	taskMix: DefaultTaskMix;
 };
+
+export type DefaultTaskMix = {
+	inlineClick: number;
+	input: number;
+	floatClick: number;
+};
+
+export type DefaultTaskMixKey = keyof DefaultTaskMix;
+
+const defaultTaskMixKeys: readonly DefaultTaskMixKey[] = [
+	'inlineClick',
+	'input',
+	'floatClick',
+];
 
 export const defaultDefaultGameConfig: DefaultGameConfig = {
 	textLengthMultiplier: 1,
+	taskMix: {
+		inlineClick: 10,
+		input: 5,
+		floatClick: 5,
+	},
 };
 
 export const defaultGameConfigLimits = {
 	textLengthMultiplier: { min: 1, max: 5 },
-} satisfies Record<keyof DefaultGameConfig, { min: number; max: number }>;
+	taskCount: { min: 1, max: 60 },
+	taskMix: { min: 0, max: 60 },
+} as const;
 
 export const defaultRecursiveGridConfig: RecursiveGridConfig = {
 	rows: 3,
@@ -64,7 +86,53 @@ export function clampDefaultGameConfig(config: DefaultGameConfig): DefaultGameCo
 			config.textLengthMultiplier,
 			defaultGameConfigLimits.textLengthMultiplier,
 		),
+		taskMix: clampDefaultTaskMix(config.taskMix),
 	};
+}
+
+export function rebalanceDefaultTaskMix(
+	mix: DefaultTaskMix,
+	key: DefaultTaskMixKey,
+	value: number,
+): DefaultTaskMix {
+	const current = clampDefaultTaskMix(mix);
+	const total = getDefaultTaskMixTotal(current);
+	const next = { ...current };
+	const safeValue = clampInteger(value, { min: 0, max: total });
+	let delta = safeValue - current[key];
+	const otherKeys = defaultTaskMixKeys.filter((item) => item !== key);
+	next[key] = safeValue;
+
+	while (delta > 0) {
+		const target = pickTaskMixKey(next, otherKeys, 'largest');
+		if (next[target] === 0) break;
+		next[target] -= 1;
+		delta -= 1;
+	}
+
+	while (delta < 0) {
+		const target = pickTaskMixKey(next, otherKeys, 'lowest');
+		next[target] += 1;
+		delta += 1;
+	}
+
+	return next;
+}
+
+export function redistributeDefaultTaskMix(totalTasks: number): DefaultTaskMix {
+	const total = clampInteger(totalTasks, defaultGameConfigLimits.taskCount);
+	const base = Math.floor(total / defaultTaskMixKeys.length);
+	const next: DefaultTaskMix = { inlineClick: base, input: base, floatClick: base };
+
+	for (let index = 0; index < total % defaultTaskMixKeys.length; index += 1) {
+		next[defaultTaskMixKeys[index]] += 1;
+	}
+
+	return next;
+}
+
+export function getDefaultTaskMixTotal(mix: DefaultTaskMix) {
+	return defaultTaskMixKeys.reduce((total, key) => total + mix[key], 0);
 }
 
 export function generateRecursiveGridGame(seed: string, config: RecursiveGridConfig): GameModel {
@@ -265,7 +333,7 @@ export function generateDefaultGame(
 		},
 	);
 
-	const taskCounts = getTaskCounts(defaultConfig.taskCount);
+	const taskCounts = getTaskCounts(safeConfig.taskMix);
 
 	for (let index = 0; index < taskCounts.overlay; index += 1) {
 		addControl({
@@ -422,10 +490,42 @@ function createWriteText(random: Random, words: readonly string[]) {
 	).join(' ');
 }
 
-function getTaskCounts(taskCount: number) {
-	const overlay = Math.round(taskCount * 0.2);
-	const write = Math.round(taskCount * 0.25);
-	return { overlay, write, click: taskCount - overlay - write };
+function clampDefaultTaskMix(mix: DefaultTaskMix): DefaultTaskMix {
+	const next = {
+		inlineClick: clampInteger(mix.inlineClick, defaultGameConfigLimits.taskMix),
+		input: clampInteger(mix.input, defaultGameConfigLimits.taskMix),
+		floatClick: clampInteger(mix.floatClick, defaultGameConfigLimits.taskMix),
+	};
+	const total = getDefaultTaskMixTotal(next);
+
+	if (total < defaultGameConfigLimits.taskCount.min) {
+		return redistributeDefaultTaskMix(defaultGameConfigLimits.taskCount.min);
+	}
+
+	if (total > defaultGameConfigLimits.taskCount.max) {
+		return redistributeDefaultTaskMix(defaultGameConfigLimits.taskCount.max);
+	}
+
+	return next;
+}
+
+function pickTaskMixKey(
+	mix: DefaultTaskMix,
+	keys: readonly DefaultTaskMixKey[],
+	mode: 'largest' | 'lowest',
+) {
+	return keys.reduce((picked, key) => {
+		if (mode === 'largest') return mix[key] > mix[picked] ? key : picked;
+		return mix[key] < mix[picked] ? key : picked;
+	});
+}
+
+function getTaskCounts(taskMix: DefaultTaskMix) {
+	return {
+		overlay: taskMix.floatClick,
+		write: taskMix.input,
+		click: taskMix.inlineClick,
+	};
 }
 
 function pickTaskControls<T extends GameControl>(

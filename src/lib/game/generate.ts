@@ -20,6 +20,18 @@ export type RecursiveGridConfig = {
 	targetsPerLevel: number;
 };
 
+export type DefaultGameConfig = {
+	textLengthMultiplier: number;
+};
+
+export const defaultDefaultGameConfig: DefaultGameConfig = {
+	textLengthMultiplier: 1,
+};
+
+export const defaultGameConfigLimits = {
+	textLengthMultiplier: { min: 1, max: 5 },
+} satisfies Record<keyof DefaultGameConfig, { min: number; max: number }>;
+
 export const defaultRecursiveGridConfig: RecursiveGridConfig = {
 	rows: 3,
 	cols: 3,
@@ -42,6 +54,15 @@ export function clampRecursiveGridConfig(config: RecursiveGridConfig): Recursive
 		targetsPerLevel: clampInteger(
 			config.targetsPerLevel,
 			recursiveGridConfigLimits.targetsPerLevel,
+		),
+	};
+}
+
+export function clampDefaultGameConfig(config: DefaultGameConfig): DefaultGameConfig {
+	return {
+		textLengthMultiplier: clampInteger(
+			config.textLengthMultiplier,
+			defaultGameConfigLimits.textLengthMultiplier,
 		),
 	};
 }
@@ -215,8 +236,13 @@ export function generateScrollGame(seed: string, words: readonly string[]): Game
 	};
 }
 
-export function generateDefaultGame(seed: string, words: readonly string[]): GameModel {
+export function generateDefaultGame(
+	seed: string,
+	words: readonly string[],
+	config: DefaultGameConfig = defaultDefaultGameConfig,
+): GameModel {
 	const random = new Random(seed);
+	const safeConfig = clampDefaultGameConfig(config);
 	const panels: GamePanel[] = [];
 	const controls: GameControl[] = [];
 	const nextControlId = createControlIdFactory();
@@ -227,7 +253,7 @@ export function generateDefaultGame(seed: string, words: readonly string[]): Gam
 	const createPanels = createPanelFactory(random, words, panels);
 
 	createPanels(
-		(count) => count,
+		(count) => Math.round(count * safeConfig.textLengthMultiplier),
 		(panelId) => {
 			const type = random.chance(defaultConfig.writeChance) ? 'write' : 'click';
 			return addControl({
@@ -397,7 +423,7 @@ function createWriteText(random: Random, words: readonly string[]) {
 }
 
 function getTaskCounts(taskCount: number) {
-	const overlay = Math.round(taskCount * 0.5);
+	const overlay = Math.round(taskCount * 0.2);
 	const write = Math.round(taskCount * 0.25);
 	return { overlay, write, click: taskCount - overlay - write };
 }

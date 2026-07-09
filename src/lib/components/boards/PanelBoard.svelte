@@ -22,6 +22,7 @@
 		onFormSubmit,
 		onScrollComplete,
 		onStart,
+		startContent,
 		scroll = false,
 	}: BoardProps & { scroll?: boolean } = $props();
 
@@ -159,7 +160,7 @@
 	}
 </script>
 
-<BoardShell {started} {completed} {onStart}>
+<BoardShell {started} {completed} {onStart} {startContent}>
 	<div bind:this={board} class="relative h-full">
 		{#key runKey}
 			<div class={scroll ? 'flex h-full flex-col gap-5' : 'h-full'}>

@@ -6,15 +6,15 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let game = $derived(data.seed ? generateScrollGame(data.seed, data.words) : null);
 </script>
 
-{#if data.seed && game}
+{#if data.seed && data.words}
+	{@const game = generateScrollGame(data.seed, data.words)}
 	<ChallengeFrame mode="scroll" seed={data.seed} {game}>
 		{#snippet board(_session)}
 			<PanelBoard {..._session} scroll />
 		{/snippet}
 	</ChallengeFrame>
-{:else}
+{:else if !data.seed}
 	<SeedRedirect mode="scroll" />
 {/if}

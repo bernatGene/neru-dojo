@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import ChallengeFrame from '$lib/components/ChallengeFrame.svelte';
 	import PanelBoard from '$lib/components/boards/PanelBoard.svelte';
 	import SeedRedirect from '$lib/components/SeedRedirect.svelte';
@@ -19,7 +19,9 @@
 	const storageKey = 'neru-dojo-default-config';
 
 	let { data }: { data: PageData } = $props();
+	const words = untrack(() => data.words);
 	let config = $state<DefaultGameConfig>(defaultDefaultGameConfig);
+	let game = $derived(data.seed ? generateDefaultGame(data.seed, words, config) : null);
 	let totalTasks = $derived(getDefaultTaskMixTotal(config.taskMix));
 
 	onMount(() => {
@@ -62,8 +64,7 @@
 	}
 </script>
 
-{#if data.seed && data.words}
-	{@const game = generateDefaultGame(data.seed, data.words, config)}
+{#if data.seed && game}
 	<ChallengeFrame mode="default" seed={data.seed} {game}>
 		{#snippet startContent()}
 			<div class="mt-8 flex flex-col gap-4 text-2xl">
@@ -136,6 +137,6 @@
 			<PanelBoard {..._session} />
 		{/snippet}
 	</ChallengeFrame>
-{:else if !data.seed}
+{:else}
 	<SeedRedirect />
 {/if}

@@ -69,7 +69,7 @@
 				<span class="block h-[45vh]"></span>
 			{/if}
 
-			{#each tokens as token}
+			{#each tokens as token, index (token.kind === 'control' ? token.control.id : `${token.kind}-${index}`)}
 				{#if token.kind === 'word'}
 					<span class="mr-2 inline-block">{token.text}</span>
 				{:else if token.kind === 'break' && !horizontal}

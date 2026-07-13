@@ -6,7 +6,8 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let game = $derived(data.seed ? generateScrollGame(data.seed, data.words) : null);
+	let hasWords = $derived(Array.isArray(data.words));
+	let game = $derived(data.seed && hasWords ? generateScrollGame(data.seed, data.words) : null);
 </script>
 
 {#if data.seed && game}
@@ -15,6 +16,6 @@
 			<PanelBoard {..._session} scroll />
 		{/snippet}
 	</ChallengeFrame>
-{:else}
+{:else if !data.seed}
 	<SeedRedirect mode="scroll" />
 {/if}

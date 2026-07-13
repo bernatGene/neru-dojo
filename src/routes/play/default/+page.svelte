@@ -20,7 +20,10 @@
 
 	let { data }: { data: PageData } = $props();
 	let config = $state<DefaultGameConfig>(defaultDefaultGameConfig);
-	let game = $derived(data.seed ? generateDefaultGame(data.seed, data.words, config) : null);
+	let hasWords = $derived(Array.isArray(data.words));
+	let game = $derived(
+		data.seed && hasWords ? generateDefaultGame(data.seed, data.words, config) : null,
+	);
 	let totalTasks = $derived(getDefaultTaskMixTotal(config.taskMix));
 
 	onMount(() => {
@@ -136,6 +139,6 @@
 			<PanelBoard {..._session} />
 		{/snippet}
 	</ChallengeFrame>
-{:else}
+{:else if !data.seed}
 	<SeedRedirect />
 {/if}

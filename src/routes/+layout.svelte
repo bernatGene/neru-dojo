@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { asset } from '$app/paths';
+	import { page } from '$app/state';
 	import './layout.css';
 
 	let { children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={asset('/neru-appicon.png')} /></svelte:head>
-{@render children()}
+{#key page.url.pathname}
+	{@render children()}
+{/key}

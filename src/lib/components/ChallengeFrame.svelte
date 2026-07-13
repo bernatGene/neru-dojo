@@ -39,7 +39,7 @@
 	let seedStats = $state<SeedStats | null>(null);
 	let started = $derived(startTime > 0);
 	let completed = $derived(finishedAt !== null);
-	let activeControl = $derived(completed ? null : game.tasks[currentTaskIndex]);
+	let activeControl = $derived(completed ? null : (game.tasks[currentTaskIndex] ?? null));
 	let activeControlId = $derived(activeControl?.id ?? null);
 	let elapsedMs = $derived(started ? (finishedAt ?? now) - startTime : 0);
 

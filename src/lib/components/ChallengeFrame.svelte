@@ -6,6 +6,7 @@
 	import Results from '$lib/components/Results.svelte';
 	import { modeHref } from '$lib/game/modes';
 	import { createSeed } from '$lib/game/seed';
+	import { encodeModeSeed, loadModeConfig } from '$lib/game/configEncoding';
 	import { clearSeedStats, saveSeedStats, type SeedStats } from '$lib/game/seedResults';
 	import type { BoardProps } from '$lib/components/boards/types';
 	import type { GameMode, GameModel } from '$lib/game/types';
@@ -156,7 +157,8 @@
 	}
 
 	function newSeed() {
-		goto(modeHref(mode, createSeed()), { noScroll: true });
+		const { config } = loadModeConfig(mode, seed);
+		goto(modeHref(mode, encodeModeSeed(mode, createSeed(), config)), { noScroll: true });
 	}
 
 	function clearStats() {

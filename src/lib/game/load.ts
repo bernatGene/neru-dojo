@@ -1,17 +1,20 @@
 import { asset } from '$app/paths';
-import { error } from '@sveltejs/kit';
-import { isValidSeed } from './seed';
 import { loadWords } from './words';
+import type { GameMode } from './types';
+import { loadModeConfig } from './configEncoding';
 
-type SeedLoadEvent = { url: URL; fetch: typeof fetch };
+export type SeedLoadEvent = { url: URL; fetch: typeof fetch };
 
-export const loadSeed = ({ url }: SeedLoadEvent) => {
-	const seed = url.searchParams.get('seed');
-	if (seed !== null && !isValidSeed(seed)) error(404, 'Invalid seed');
-	return { seed };
-};
+export function loadSeed<T>(mode: GameMode, { url }: SeedLoadEvent) {
+	const seed = url.searchParams.get('seed') ?? '';
+	const { baseSeed, config } = loadModeConfig(mode, seed);
 
-export const loadSeedWithWords = async (event: SeedLoadEvent) => ({
-	...loadSeed(event),
-	words: await loadWords(event.fetch, asset('/english.json')),
-});
+	return { seed: seed || null, baseSeed, config: config as T };
+}
+
+export async function loadSeedWithWords<T>(mode: GameMode, event: SeedLoadEvent) {
+	return {
+		...loadSeed<T>(mode, event),
+		words: await loadWords(event.fetch, asset('/english.json')),
+	};
+}

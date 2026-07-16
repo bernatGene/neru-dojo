@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import ChallengeFrame from '$lib/components/ChallengeFrame.svelte';
 	import PanelBoard from '$lib/components/boards/PanelBoard.svelte';
 	import SeedRedirect from '$lib/components/SeedRedirect.svelte';
+	import { modeHref } from '$lib/game/modes';
 	import {
 		clampDefaultGameConfig,
 		defaultDefaultGameConfig,
@@ -14,9 +15,8 @@
 		type DefaultGameConfig,
 		type DefaultTaskMixKey,
 	} from '$lib/game/generate';
+	import { defaultConfigStorageKey, encodeModeSeed } from '$lib/game/configEncoding';
 	import type { PageData } from './$types';
-
-	const storageKey = 'neru-dojo-default-config';
 
 	let { data }: { data: PageData } = $props();
 	const words = untrack(() => data.words);
@@ -24,43 +24,55 @@
 	let game = $derived(data.seed ? generateDefaultGame(data.seed, words, config) : null);
 	let totalTasks = $derived(getDefaultTaskMixTotal(config.taskMix));
 
-	onMount(() => {
-		config = loadConfig();
+	$effect.pre(() => {
+		config = data.config ?? defaultDefaultGameConfig;
 	});
 
-	function loadConfig() {
-		const stored = localStorage.getItem(storageKey);
-		if (!stored) return defaultDefaultGameConfig;
+	$effect(() => {
+		const effectiveConfig = data.config ?? defaultDefaultGameConfig;
+		if (!data.baseSeed) return;
 
-		try {
-			return clampDefaultGameConfig({ ...defaultDefaultGameConfig, ...JSON.parse(stored) });
-		} catch {
-			return defaultDefaultGameConfig;
+		const nextUrl = modeHref(
+			'default',
+			encodeModeSeed('default', data.baseSeed, effectiveConfig),
+		);
+		if (nextUrl !== window.location.pathname + window.location.search) {
+			history.replaceState(null, '', nextUrl);
+		}
+	});
+
+	function syncConfig(nextConfig: DefaultGameConfig) {
+		config = clampDefaultGameConfig(nextConfig);
+		localStorage.setItem(defaultConfigStorageKey, JSON.stringify(config));
+
+		if (data.baseSeed) {
+			history.replaceState(
+				null,
+				'',
+				modeHref('default', encodeModeSeed('default', data.baseSeed, config)),
+			);
 		}
 	}
 
 	function updateTextLength(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		config = clampDefaultGameConfig({ ...config, textLengthMultiplier: Number(input.value) });
-		localStorage.setItem(storageKey, JSON.stringify(config));
+		syncConfig({ ...config, textLengthMultiplier: Number(input.value) });
 	}
 
 	function updateTaskMix(key: DefaultTaskMixKey, event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		config = clampDefaultGameConfig({
+		syncConfig({
 			...config,
 			taskMix: rebalanceDefaultTaskMix(config.taskMix, key, Number(input.value)),
 		});
-		localStorage.setItem(storageKey, JSON.stringify(config));
 	}
 
 	function updateTotalTasks(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		config = clampDefaultGameConfig({
+		syncConfig({
 			...config,
 			taskMix: redistributeDefaultTaskMix(Number(input.value)),
 		});
-		localStorage.setItem(storageKey, JSON.stringify(config));
 	}
 </script>
 

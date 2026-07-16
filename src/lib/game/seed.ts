@@ -1,5 +1,7 @@
 const seedAlphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const seedPattern = /^[0-9A-Za-z]{6,12}$/;
+const baseSeedPattern = /^[0-9A-Za-z]{6,12}$/;
+
+export const CONFIG_SEPARATOR = '-';
 
 export function createSeed(length = 8) {
 	const bytes = new Uint8Array(length);
@@ -20,6 +22,15 @@ export function createSeed(length = 8) {
 	return seed;
 }
 
+export function isValidBaseSeed(seed: string) {
+	return baseSeedPattern.test(seed);
+}
+
 export function isValidSeed(seed: string) {
-	return seedPattern.test(seed);
+	return isValidBaseSeed(seed);
+}
+
+export function extractBaseSeed(seed: string) {
+	const [first] = seed.split(CONFIG_SEPARATOR);
+	return isValidBaseSeed(first) ? first : seed;
 }

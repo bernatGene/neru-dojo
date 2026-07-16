@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ChallengeFrame from '$lib/components/ChallengeFrame.svelte';
 	import RecursiveGridBoard from '$lib/components/boards/RecursiveGridBoard.svelte';
 	import SeedRedirect from '$lib/components/SeedRedirect.svelte';
+	import { modeHref } from '$lib/game/modes';
 	import {
 		clampRecursiveGridConfig,
 		defaultRecursiveGridConfig,
@@ -10,33 +10,43 @@
 		recursiveGridConfigLimits,
 		type RecursiveGridConfig,
 	} from '$lib/game/generate';
+	import { encodeModeSeed, rgridConfigStorageKey } from '$lib/game/configEncoding';
 	import type { PageData } from './$types';
-
-	const storageKey = 'neru-dojo-rgrid-config';
 
 	let { data }: { data: PageData } = $props();
 	let config = $state<RecursiveGridConfig>(defaultRecursiveGridConfig);
 	let game = $derived(data.seed ? generateRecursiveGridGame(data.seed, config) : null);
 
-	onMount(() => {
-		config = loadConfig();
+	$effect.pre(() => {
+		config = data.config ?? defaultRecursiveGridConfig;
 	});
 
-	function loadConfig() {
-		const stored = localStorage.getItem(storageKey);
-		if (!stored) return defaultRecursiveGridConfig;
+	$effect(() => {
+		const effectiveConfig = data.config ?? defaultRecursiveGridConfig;
+		if (!data.baseSeed) return;
 
-		try {
-			return clampRecursiveGridConfig({ ...defaultRecursiveGridConfig, ...JSON.parse(stored) });
-		} catch {
-			return defaultRecursiveGridConfig;
+		const nextUrl = modeHref('rgrid', encodeModeSeed('rgrid', data.baseSeed, effectiveConfig));
+		if (nextUrl !== window.location.pathname + window.location.search) {
+			history.replaceState(null, '', nextUrl);
+		}
+	});
+
+	function syncConfig(nextConfig: RecursiveGridConfig) {
+		config = clampRecursiveGridConfig(nextConfig);
+		localStorage.setItem(rgridConfigStorageKey, JSON.stringify(config));
+
+		if (data.baseSeed) {
+			history.replaceState(
+				null,
+				'',
+				modeHref('rgrid', encodeModeSeed('rgrid', data.baseSeed, config)),
+			);
 		}
 	}
 
 	function updateConfig(key: keyof RecursiveGridConfig, event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		config = clampRecursiveGridConfig({ ...config, [key]: Number(input.value) });
-		localStorage.setItem(storageKey, JSON.stringify(config));
+		syncConfig({ ...config, [key]: Number(input.value) });
 	}
 
 	function requestFullscreen() {

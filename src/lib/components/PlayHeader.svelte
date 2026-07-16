@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { asset } from '$app/paths';
 	import { gameModes, modeHref as getModeHref } from '$lib/game/modes';
+	import { extractBaseSeed } from '$lib/game/seed';
 	import { formatElapsed } from '$lib/game/time';
 	import type { GameMode } from '$lib/game/types';
 
@@ -31,7 +32,7 @@
 	let nextTheme = $derived<Theme>(theme === 'light' ? 'dark' : 'light');
 
 	function modeHref(nextMode: GameMode) {
-		return getModeHref(nextMode, seed);
+		return getModeHref(nextMode, extractBaseSeed(seed));
 	}
 </script>
 

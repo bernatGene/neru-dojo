@@ -157,7 +157,8 @@
 	}
 
 	function newSeed() {
-		const { config } = loadModeConfig(mode, seed);
+		const liveSeed = new URLSearchParams(window.location.search).get('seed') ?? seed;
+		const { config } = loadModeConfig(mode, liveSeed);
 		goto(modeHref(mode, encodeModeSeed(mode, createSeed(), config)), { noScroll: true });
 	}
 

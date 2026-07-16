@@ -21,7 +21,7 @@
 		type="button"
 		data-control-id={id}
 		class="absolute z-20 -translate-x-1/2 -translate-y-1/2 border-2 border-highlight-600 bg-highlight-500 outline-none focus-visible:border-highlight-600"
-		style={`left: ${x}%; top: ${y}%; width: ${width}px; height: ${height}px;`}
+		style={`left: ${x}%; top: ${y}%; width: ${width}%; height: ${height}%;`}
 		onclick={() => onInteract(id)}
 		aria-label="Click target"
 	></button>

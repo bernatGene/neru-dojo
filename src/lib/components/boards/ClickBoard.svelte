@@ -11,6 +11,7 @@
 		onClickControl,
 		onClickMiss,
 		onStart,
+		startContent,
 	}: BoardProps = $props();
 
 	function handleClickPanel() {
@@ -19,7 +20,7 @@
 
 </script>
 
-<BoardShell {started} {completed} {onStart}>
+<BoardShell {started} {completed} {onStart} {startContent}>
 	{#key runKey}
 		<button
 			type="button"

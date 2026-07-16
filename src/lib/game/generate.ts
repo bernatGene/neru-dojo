@@ -20,6 +20,12 @@ export type RecursiveGridConfig = {
 	targetsPerLevel: number;
 };
 
+export type ClickConfig = {
+	targets: number;
+	minSize: number;
+	maxSize: number;
+};
+
 export type DefaultGameConfig = {
 	textLengthMultiplier: number;
 	taskMix: DefaultTaskMix;
@@ -61,12 +67,24 @@ export const defaultRecursiveGridConfig: RecursiveGridConfig = {
 	targetsPerLevel: 5,
 };
 
+export const defaultClickConfig: ClickConfig = {
+	targets: 15,
+	minSize: 2,
+	maxSize: 10,
+};
+
 export const recursiveGridConfigLimits = {
 	rows: { min: 1, max: 6 },
 	cols: { min: 1, max: 6 },
 	levels: { min: 1, max: 9 },
 	targetsPerLevel: { min: 1, max: 20 },
 } satisfies Record<keyof RecursiveGridConfig, { min: number; max: number }>;
+
+export const clickConfigLimits = {
+	targets: { min: 5, max: 30 },
+	minSize: { min: 1, max: 30 },
+	maxSize: { min: 1, max: 30 },
+} satisfies Record<keyof ClickConfig, { min: number; max: number }>;
 
 export function clampRecursiveGridConfig(config: RecursiveGridConfig): RecursiveGridConfig {
 	return {
@@ -78,6 +96,16 @@ export function clampRecursiveGridConfig(config: RecursiveGridConfig): Recursive
 			recursiveGridConfigLimits.targetsPerLevel,
 		),
 	};
+}
+
+export function clampClickConfig(config: ClickConfig): ClickConfig {
+	const targets = clampInteger(config.targets, clickConfigLimits.targets);
+	const minSize = clampInteger(config.minSize, clickConfigLimits.minSize);
+	const maxSize = Math.max(
+		clampInteger(config.maxSize, clickConfigLimits.maxSize),
+		minSize,
+	);
+	return { targets, minSize, maxSize };
 }
 
 export function clampDefaultGameConfig(config: DefaultGameConfig): DefaultGameConfig {
@@ -156,21 +184,28 @@ export function generateRecursiveGridGame(seed: string, config: RecursiveGridCon
 	};
 }
 
-export function generateClickGame(seed: string): GameModel {
+export function generateClickGame(
+	seed: string,
+	config: ClickConfig = defaultClickConfig,
+): GameModel {
 	const random = new Random(seed);
+	const safeConfig = clampClickConfig(config);
 	const controls: GameControl[] = [];
-	let controlNumber = 0;
-	const nextControlId = () => `control-${controlNumber++}`;
+	const nextControlId = createControlIdFactory();
 
-	for (let index = 0; index < defaultConfig.taskCount; index += 1) {
+	for (let index = 0; index < safeConfig.targets; index += 1) {
+		const width = random.int(safeConfig.minSize, safeConfig.maxSize);
+		const height = random.int(safeConfig.minSize, safeConfig.maxSize);
+		const xMin = Math.ceil(width / 2);
+		const yMin = Math.ceil(height / 2);
 		controls.push({
 			id: nextControlId(),
 			type: 'overlay',
 			text: '',
-			x: random.int(10, 90),
-			y: random.int(10, 90),
-			width: random.int(12, 64),
-			height: random.int(12, 64),
+			x: random.int(xMin, Math.max(xMin, 100 - xMin)),
+			y: random.int(yMin, Math.max(yMin, 100 - yMin)),
+			width,
+			height,
 		});
 	}
 

@@ -1,9 +1,12 @@
 import {
+	clampClickConfig,
 	clampDefaultGameConfig,
 	clampRecursiveGridConfig,
+	defaultClickConfig,
 	defaultDefaultGameConfig,
 	defaultRecursiveGridConfig,
 	getDefaultTaskMixTotal,
+	type ClickConfig,
 	type DefaultGameConfig,
 	type RecursiveGridConfig,
 } from './generate';
@@ -12,6 +15,7 @@ import type { GameMode } from './types';
 
 export const defaultConfigStorageKey = 'neru-dojo-default-config';
 export const rgridConfigStorageKey = 'neru-dojo-rgrid-config';
+export const clickConfigStorageKey = 'neru-dojo-click-config';
 
 function readStoredConfig<T>(storageKey: string): Partial<T> {
 	try {
@@ -71,6 +75,20 @@ function encodeRgridConfig(config: RecursiveGridConfig): number[] {
 	return [config.rows, config.cols, config.levels, config.targetsPerLevel];
 }
 
+function decodeClickParams(params: number[]): Partial<ClickConfig> {
+	const partial: Partial<ClickConfig> = {};
+
+	if (params.length > 0) partial.targets = params[0];
+	if (params.length > 1) partial.minSize = params[1];
+	if (params.length > 2) partial.maxSize = params[2];
+
+	return partial;
+}
+
+function encodeClickConfig(config: ClickConfig): number[] {
+	return [config.targets, config.minSize, config.maxSize];
+}
+
 export function decodeModeSeed(seed: string): { baseSeed: string; params: number[] } {
 	const parts = seed.split(CONFIG_SEPARATOR);
 	const baseCandidate = parts[0] ?? '';
@@ -92,9 +110,13 @@ export function loadModeConfig(
 	seed: string,
 ): { baseSeed: string; config: RecursiveGridConfig };
 export function loadModeConfig(
+	mode: 'click',
+	seed: string,
+): { baseSeed: string; config: ClickConfig };
+export function loadModeConfig(
 	mode: GameMode,
 	seed: string,
-): { baseSeed: string; config: DefaultGameConfig | RecursiveGridConfig | undefined };
+): { baseSeed: string; config: DefaultGameConfig | RecursiveGridConfig | ClickConfig | undefined };
 export function loadModeConfig(mode: GameMode, seed: string) {
 	const { baseSeed, params } = decodeModeSeed(seed);
 
@@ -111,6 +133,12 @@ export function loadModeConfig(mode: GameMode, seed: string) {
 			const merged = { ...defaultRecursiveGridConfig, ...stored, ...partial };
 			return { baseSeed, config: clampRecursiveGridConfig(merged) };
 		}
+		case 'click': {
+			const stored = readStoredConfig<ClickConfig>(clickConfigStorageKey);
+			const partial = decodeClickParams(params);
+			const merged = { ...defaultClickConfig, ...stored, ...partial };
+			return { baseSeed, config: clampClickConfig(merged) };
+		}
 		default:
 			return { baseSeed, config: undefined };
 	}
@@ -126,6 +154,11 @@ export function encodeModeSeed(
 	baseSeed: string,
 	config: RecursiveGridConfig,
 ): string;
+export function encodeModeSeed(
+	mode: 'click',
+	baseSeed: string,
+	config: ClickConfig,
+): string;
 export function encodeModeSeed(mode: GameMode, baseSeed: string, config?: unknown): string;
 export function encodeModeSeed(mode: GameMode, baseSeed: string, config?: unknown) {
 	switch (mode) {
@@ -133,6 +166,8 @@ export function encodeModeSeed(mode: GameMode, baseSeed: string, config?: unknow
 			return [baseSeed, ...encodeDefaultConfig(config as DefaultGameConfig)].join(CONFIG_SEPARATOR);
 		case 'rgrid':
 			return [baseSeed, ...encodeRgridConfig(config as RecursiveGridConfig)].join(CONFIG_SEPARATOR);
+		case 'click':
+			return [baseSeed, ...encodeClickConfig(config as ClickConfig)].join(CONFIG_SEPARATOR);
 		default:
 			return baseSeed;
 	}

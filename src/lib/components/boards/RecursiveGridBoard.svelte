@@ -69,9 +69,11 @@
 	}
 
 	function divideAxis(start: number, end: number, index: number, count: number) {
-		const cellSize = Math.trunc((end - start) / count);
-		const cellStart = start + index * cellSize;
-		const cellEnd = index === count - 1 ? end : start + (index + 1) * cellSize;
+		const span = end - start;
+		const cellSize = Math.trunc(span / count);
+		const offset = Math.trunc((span - cellSize * count) / 2);
+		const cellStart = start + offset + index * cellSize;
+		const cellEnd = cellStart + cellSize;
 
 		return [cellStart, cellEnd] as const;
 	}

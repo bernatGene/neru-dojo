@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getFullscreenMetrics, type FullscreenMetrics } from '$lib/browser/fullscreenMetrics';
+	import { type FullscreenMetrics, getFullscreenMetrics } from '$lib/browser/fullscreenMetrics';
 	import type { RecursiveGridGameControl } from '$lib/game/types';
 	import BoardShell from './BoardShell.svelte';
 	import type { BoardProps } from './types';
@@ -71,9 +71,9 @@
 	function divideAxis(start: number, end: number, index: number, count: number) {
 		const span = end - start;
 		const cellSize = Math.trunc(span / count);
-		const offset = Math.trunc((span - cellSize * count) / 2);
-		const cellStart = start + offset + index * cellSize;
-		const cellEnd = cellStart + cellSize;
+		const remainder = span % count;
+		const cellStart = start + index * cellSize + Math.min(index, remainder);
+		const cellEnd = cellStart + cellSize + (index < remainder ? 1 : 0);
 
 		return [cellStart, cellEnd] as const;
 	}
